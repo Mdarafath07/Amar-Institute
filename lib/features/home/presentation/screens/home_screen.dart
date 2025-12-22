@@ -7,10 +7,13 @@ import 'package:provider/provider.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
 import '../../../../app/app_colors.dart';
+import '../../../../exam/presentation/screens/exam_routine.dart';
+import '../../../../notice/presentation/screens/notice_screen.dart';
 import '../../../../providers/auth_provider.dart';
 import '../../../../providers/user_provider.dart';
 import '../../../../providers/timetable_provider.dart';
 import '../../../../models/timetable_model.dart';
+import '../../../../resource/presentation/resource_screen.dart';
 import '../../../routine/presentation/screens/routine_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -337,11 +340,6 @@ class _HomeScreenState extends State<HomeScreen> {
   // ================= LIVE TIMETABLE =================
 
   Widget _buildLiveTimetable(TimetableProvider provider, bool isDark) {
-    if (provider.isLoading) {
-      return Center(
-          child: Image.asset(AssetsPath.scarch)
-      );
-    }
 
     if (provider.isHoliday) {
       return _statusCard("Holiday 🎉", "Take rest & recharge", Icons.celebration,
@@ -354,7 +352,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Colors.blue);
     }
 
-    // Real-time update জন্য StreamBuilder
+
     return StreamBuilder<DateTime>(
       stream: Stream.periodic(
           const Duration(seconds: 1), (_) => DateTime.now()),
@@ -529,19 +527,27 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 }, isDark),
             _action("Exams", Icons.menu_book_rounded, Colors.redAccent, () {
-              _showComingSoon("Exam Routine");
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const ExamRoutine()),
+              );
             }, isDark),
             _action(
-                "Suggest", Icons.auto_awesome_rounded, Colors.purpleAccent, () {
-              _showComingSoon("Suggestions");
-            }, isDark),
-            _action(
-                "Library", Icons.local_library_rounded, Colors.blueAccent, () {
-              _showComingSoon("Library");
+                "Resource", Icons.local_library_rounded, Colors.blueAccent, () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const ResourceScreen()),
+              );
             }, isDark),
             _action(
                 "Notice", Icons.notifications_active_rounded, Colors.teal, () {
-              _showComingSoon("Notice Board");
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const NoticeScreen()),
+              );
             }, isDark),
             _action("Game Zone", Icons.sports_esports_rounded,
                 Colors.pinkAccent, () {

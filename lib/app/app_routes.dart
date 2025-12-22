@@ -2,6 +2,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../exam/presentation/screens/exam_routine.dart';
 import '../features/ai_tools/presentation/screens/ai_tools_screen.dart';
 import '../features/auth/presentation/screens/intro_screen.dart';
 import '../features/auth/presentation/screens/sing_in_screen.dart';
@@ -9,6 +10,8 @@ import '../features/auth/presentation/screens/sing_up_screen.dart';
 import '../features/auth/presentation/screens/splash_screen.dart';
 import '../features/common/presentation/screens/main_nav_holder_screen.dart';
 import '../features/routine/presentation/screens/routine_screen.dart';
+import '../notice/presentation/screens/notice_screen.dart';
+import '../resource/presentation/resource_screen.dart';
 
 class AppRoutes {
   static Route<dynamic> route(RouteSettings setting) {
@@ -28,6 +31,12 @@ class AppRoutes {
       widget = const AIToolsScreen();
     } else if (setting.name == RoutineScreen.name) {
       widget = const RoutineScreen();
+    } else if (setting.name == ExamRoutine.name) {
+      widget = const ExamRoutine();
+    }else if (setting.name == NoticeScreen.name) {
+      widget = const NoticeScreen();
+    }else if (setting.name == ResourceScreen.name) {
+      widget = const ResourceScreen();
     }
     return MaterialPageRoute(builder: (ctx) => widget);
   }
