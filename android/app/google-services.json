@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "92486022174",
+    "project_id": "amar-institute",
+    "storage_bucket": "amar-institute.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:92486022174:android:fbc8aea3ce987cd685ea0f",
+        "android_client_info": {
+          "package_name": "com.example.amar_institute"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFP8_nFG8zOd1TMgLDTVWDSgixYapaU58"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:92486022174:android:b6cba0f255e8711485ea0f",
+        "android_client_info": {
+          "package_name": "com.example.amar_institute_admin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFP8_nFG8zOd1TMgLDTVWDSgixYapaU58"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:92486022174:android:94382526f095968585ea0f",
+        "android_client_info": {
+          "package_name": "com.example.crafty_bay"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFP8_nFG8zOd1TMgLDTVWDSgixYapaU58"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
