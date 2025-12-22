@@ -28,6 +28,8 @@ class _RoutineScreenState extends State<RoutineScreen>
     'Sunday'
   ];
   int _currentTabIndex = 0;
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
+  GlobalKey<RefreshIndicatorState>();
 
   @override
   void initState() {
@@ -39,17 +41,14 @@ class _RoutineScreenState extends State<RoutineScreen>
       initialIndex: _currentTabIndex,
     );
 
-    // ট্যাব পরিবর্তন দ্রুত করার জন্য লিসেনার আপডেট
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
-        // ট্যাব ক্লিক করলে সাথে সাথে ইনডেক্স আপডেট হবে
         if (mounted) {
           setState(() {
             _currentTabIndex = _tabController.index;
           });
         }
       } else {
-        // সোয়াইপ শেষ হলে ইনডেক্স আপডেট হবে
         if (mounted && _currentTabIndex != _tabController.index) {
           setState(() {
             _currentTabIndex = _tabController.index;
@@ -81,6 +80,10 @@ class _RoutineScreenState extends State<RoutineScreen>
     }
   }
 
+  Future<void> _handleRefresh() async {
+    await _loadTimetable();
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -104,22 +107,23 @@ class _RoutineScreenState extends State<RoutineScreen>
                 _buildDaySelector(isDark),
                 Expanded(
                   child: RefreshIndicator(
+                    key: _refreshIndicatorKey,
                     color: AppColors.themeColor,
-                    onRefresh: _loadTimetable,
+                    backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                    strokeWidth: 3.0,
+                    onRefresh: _handleRefresh,
                     child: _buildContent(isDark, timetableProvider),
                   ),
                 ),
               ],
             ),
           ),
-
         ],
       ),
     );
   }
 
   Widget _buildContent(bool isDark, TimetableProvider provider) {
-    // শুধুমাত্র ডাটা না থাকলে সেন্ট্রাল লোডিং দেখাবে
     final hasData = provider.getClassesForDay(_days[_currentTabIndex]).isNotEmpty;
     if (provider.isWeeklyLoading && !hasData) {
       return _buildLoadingWidget();
@@ -127,7 +131,7 @@ class _RoutineScreenState extends State<RoutineScreen>
 
     return TabBarView(
       controller: _tabController,
-      physics: const BouncingScrollPhysics(),
+      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       children: _days
           .map((day) => _buildDayContent(day, isDark, provider))
           .toList(),
@@ -175,7 +179,6 @@ class _RoutineScreenState extends State<RoutineScreen>
               ),
               Text(
                 "Stay organized, stay ahead",
-
                 style: TextStyle(
                   fontSize: 13,
                   color: Colors.grey.shade500,
@@ -285,13 +288,13 @@ class _RoutineScreenState extends State<RoutineScreen>
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
       itemCount: classes.length + 1,
-      physics: const AlwaysScrollableScrollPhysics(), // RefreshIndicator এর জন্য জরুরি
+      physics: const AlwaysScrollableScrollPhysics(),
       itemBuilder: (context, index) {
         if (index == 0) return _buildStatsHeader(classes, day, isDark);
 
         final period = classes[index - 1];
         bool isToday = day == _getTodayName();
-        bool isLive = isToday && period.isCurrentlyRunning;
+        bool isLive = isToday && _isCurrentlyRunning(period.startTime, period.endTime);
         bool isFinished = false;
 
         if (isToday) {
@@ -307,6 +310,20 @@ class _RoutineScreenState extends State<RoutineScreen>
         return _buildCuteClassCard(period, isDark, isLive, isFinished, isToday);
       },
     );
+  }
+
+  bool _isCurrentlyRunning(String start, String end) {
+    try {
+      final now = DateTime.now();
+      final format = DateFormat.jm();
+      final startTime = format.parse(start);
+      final endTime = format.parse(end);
+
+      final nowTime = format.parse(format.format(now));
+      return nowTime.isAfter(startTime) && nowTime.isBefore(endTime);
+    } catch (_) {
+      return false;
+    }
   }
 
   Widget _buildStatsHeader(List<ClassPeriod> classes, String day, bool isDark) {

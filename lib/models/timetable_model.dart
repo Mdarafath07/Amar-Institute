@@ -1,5 +1,3 @@
-import 'package:intl/intl.dart';
-
 class TimetableModel {
   final String day;
   final Map<String, List<ClassPeriod>> classes; // Key: "ET-1st", "CT-2nd", etc.
@@ -79,37 +77,32 @@ class ClassPeriod {
     );
   }
 
-  // ফিক্সড: int.parse এর বদলে DateFormat ব্যবহার করা হয়েছে
   DateTime get startDateTime {
+    final timeParts = startTime.split(':');
     final now = DateTime.now();
-    try {
-      // এটি "09:30 AM" ফরম্যাট পার্স করবে
-      DateTime parsedTime = DateFormat("hh:mm a").parse(startTime);
-      return DateTime(now.year, now.month, now.day, parsedTime.hour, parsedTime.minute);
-    } catch (e) {
-      // ব্যাকআপ: যদি শুধু "09:30" থাকে
-      try {
-        DateTime parsedTime = DateFormat("HH:mm").parse(startTime);
-        return DateTime(now.year, now.month, now.day, parsedTime.hour, parsedTime.minute);
-      } catch (e) {
-        return DateTime(now.year, now.month, now.day, 0, 0);
-      }
-    }
+    return DateTime(
+      now.year,
+      now.month,
+      now.day,
+      int.parse(timeParts[0]),
+      int.parse(timeParts[1]),
+    );
   }
 
   DateTime get endDateTime {
+    final timeParts = endTime.split(':');
     final now = DateTime.now();
-    try {
-      DateTime parsedTime = DateFormat("hh:mm a").parse(endTime);
-      return DateTime(now.year, now.month, now.day, parsedTime.hour, parsedTime.minute);
-    } catch (e) {
-      try {
-        DateTime parsedTime = DateFormat("HH:mm").parse(endTime);
-        return DateTime(now.year, now.month, now.day, parsedTime.hour, parsedTime.minute);
-      } catch (e) {
-        return DateTime(now.year, now.month, now.day, 23, 59);
-      }
-    }
+    int hour = int.parse(timeParts[0]);
+    int minute = int.parse(timeParts[1]);
+    // Handle 01:30 as 13:30
+    if (hour < 9) hour += 12;
+    return DateTime(
+      now.year,
+      now.month,
+      now.day,
+      hour,
+      minute,
+    );
   }
 
   bool get isCurrentlyRunning {
@@ -122,3 +115,4 @@ class ClassPeriod {
     return now.isBefore(startDateTime);
   }
 }
+
