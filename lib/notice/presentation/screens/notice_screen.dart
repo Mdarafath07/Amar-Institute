@@ -1,392 +1,234 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../../app/app_colors.dart';
 
 class NoticeScreen extends StatefulWidget {
   const NoticeScreen({super.key});
-  static const name = '/notice';
 
+  static const name = '/notice';
 
   @override
   State<NoticeScreen> createState() => _NoticeScreenState();
 }
 
 class _NoticeScreenState extends State<NoticeScreen> {
-  List<NoticeModel> notices = [];
-  bool isLoading = true;
-  String _userDepartment = 'CST';
-  String _userSemester = '1st';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadUserInfo();
-  }
-
-  Future<void> _loadUserInfo() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _userDepartment = prefs.getString('userDepartment') ?? 'CST';
-      _userSemester = prefs.getString('userSemester') ?? '1st';
-    });
-    _fetchNotices();
-  }
-
-  Future<void> _fetchNotices() async {
-    setState(() => isLoading = true);
-    try {
-      QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('notices')
-          .orderBy('timestamp', descending: true)
-          .get();
-
-      List<NoticeModel> fetchedNotices = [];
-      for (var doc in snapshot.docs) {
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-
-        String department = data['department'] ?? 'All';
-        String semester = data['semester'] ?? 'All';
-
-        // Check if notice is for this user
-        bool isForUser = department == 'All' ||
-            department == _userDepartment ||
-            (department.contains('All') && department.contains(_userDepartment));
-
-        bool isSemesterMatch = semester == 'All' ||
-            semester == _userSemester ||
-            (semester.contains('All') && semester.contains(_userSemester));
-
-        if (isForUser && isSemesterMatch) {
-          fetchedNotices.add(NoticeModel(
-            id: doc.id,
-            title: data['title'] ?? '',
-            description: data['description'] ?? '',
-            timestamp: data['timestamp'] != null
-                ? (data['timestamp'] as Timestamp).toDate()
-                : DateTime.now(),
-            priority: data['priority'] ?? 'Normal',
-            department: data['department'] ?? 'All',
-            semester: data['semester'] ?? 'All',
-            targetType: data['targetType'] ?? 'all',
-          ));
-        }
-      }
-
-      setState(() {
-        notices = fetchedNotices;
-        isLoading = false;
-      });
-    } catch (e) {
-      print('Error fetching notices: $e');
-      setState(() => isLoading = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
+      backgroundColor:
+          isDark ? const Color(0xFF0F172A) : const Color(0xFFF3F6FF),
       appBar: AppBar(
+        toolbarHeight: 90,
         title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Notices'),
-            SizedBox(height: 2),
-            Text(
-              '$_userDepartment - $_userSemester',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
+            const Text(
+              "Notice Box",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 22,
+                letterSpacing: 1.0,
+                color: Colors.white,
+                shadows: [
+                  Shadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 2))
+                ],
+              ),
             ),
+            const SizedBox(height: 4),
+            Container(
+              height: 4,
+              width: 40,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(10),
+              ),
+            )
           ],
         ),
-        centerTitle: false,
-        backgroundColor: Colors.indigo[800],
+        centerTitle: true,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: _fetchNotices,
-          ),
-          IconButton(
-            icon: Icon(Icons.filter_list),
-            onPressed: () => _showFilterDialog(),
-          ),
-        ],
-      ),
-      body: isLoading
-          ? Center(child: CircularProgressIndicator())
-          : notices.isEmpty
-          ? Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.notifications_off, size: 80, color: Colors.grey),
-            SizedBox(height: 16),
-            Text(
-              'No notices for $_userDepartment $_userSemester',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
-              textAlign: TextAlign.center,
+        backgroundColor: Colors.transparent, // Background Gradient handle করবে
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            // প্রিমিয়াম গ্রেডিয়েন্ট ইফেক্ট
+            gradient: LinearGradient(
+              colors: [AppColors.themeColor, AppColors.secendthemeColor],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-          ],
-        ),
-      )
-          : RefreshIndicator(
-        onRefresh: _fetchNotices,
-        child: ListView.builder(
-          padding: EdgeInsets.all(16),
-          itemCount: notices.length,
-          itemBuilder: (context, index) {
-            return _buildNoticeCard(notices[index]);
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNoticeCard(NoticeModel notice) {
-    String timeAgo = _getTimeAgo(notice.timestamp);
-    Color priorityColor = _getPriorityColor(notice.priority);
-
-    return Card(
-      margin: EdgeInsets.only(bottom: 16),
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border(
-            left: BorderSide(
-              color: priorityColor,
-              width: 6,
+            // নিচের দিকে বড় রাউন্ড শেপ এবং শ্যাডো
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(35),
             ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.themeColor.withOpacity(0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Stack(
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: priorityColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      notice.priority,
-                      style: TextStyle(
-                        color: priorityColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  if (notice.department != 'All' || notice.semester != 'All')
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.blueGrey.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        '${notice.department} ${notice.semester}',
-                        style: TextStyle(
-                          color: Colors.blueGrey,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  Spacer(),
-                  Text(
-                    timeAgo,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 12),
-              Text(
-                notice.title,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.indigo[900],
+              // Decorative Elements (Blobs)
+              Positioned(
+                top: -20,
+                right: -10,
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundColor: Colors.white.withOpacity(0.1),
                 ),
               ),
-              SizedBox(height: 8),
-              Text(
-                notice.description,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[800],
-                  height: 1.5,
+
+              // আরও একটি ছোট কিউট ডট
+              Positioned(
+                top: 40,
+                left: 20,
+                child: Container(
+                  height: 10,
+                  width: 10,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
                 ),
-              ),
-              SizedBox(height: 12),
-              Divider(),
-              Row(
-                children: [
-                  Icon(
-                    Icons.access_time,
-                    size: 14,
-                    color: Colors.grey,
-                  ),
-                  SizedBox(width: 6),
-                  Text(
-                    DateFormat('dd MMM yyyy, hh:mm a').format(notice.timestamp),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  Spacer(),
-                  if (notice.targetType != 'all')
-                    Row(
-                      children: [
-                        Icon(Icons.group, size: 14, color: Colors.grey),
-                        SizedBox(width: 4),
-                        Text(
-                          notice.targetType == 'department'
-                              ? 'Dept Specific'
-                              : 'Sem Specific',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                ],
               ),
             ],
           ),
         ),
       ),
-    );
-  }
+      body: StreamBuilder<QuerySnapshot>(
+// Recent First Sorting
+        stream: FirebaseFirestore.instance
+            .collection('notices')
+            .orderBy('timestamp', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData)
+            return const Center(child: CircularProgressIndicator());
 
-  Future<void> _showFilterDialog() async {
-    final List<String> departments = ['CST', 'ET', 'CT', 'Civil', 'Mechanical'];
-    final List<String> semesters = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'];
-
-    String? selectedDept = _userDepartment;
-    String? selectedSem = _userSemester;
-
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Filter Notices'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DropdownButtonFormField<String>(
-              value: selectedDept,
-              items: departments
-                  .map((dept) => DropdownMenuItem(
-                value: dept,
-                child: Text(dept),
-              ))
-                  .toList(),
-              onChanged: (value) => selectedDept = value,
-              decoration: InputDecoration(labelText: 'Department'),
-            ),
-            SizedBox(height: 15),
-            DropdownButtonFormField<String>(
-              value: selectedSem,
-              items: semesters
-                  .map((sem) => DropdownMenuItem(
-                value: sem,
-                child: Text(sem),
-              ))
-                  .toList(),
-              onChanged: (value) => selectedSem = value,
-              decoration: InputDecoration(labelText: 'Semester'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (selectedDept != null && selectedSem != null) {
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.setString('userDepartment', selectedDept!);
-                await prefs.setString('userSemester', selectedSem!);
-
-                setState(() {
-                  _userDepartment = selectedDept!;
-                  _userSemester = selectedSem!;
-                });
-
-                Navigator.pop(context);
-                _fetchNotices();
-              }
+          return ListView.builder(
+            padding: const EdgeInsets.all(12),
+            itemCount: snapshot.data!.docs.length,
+            itemBuilder: (context, index) {
+              return _buildCompactNoticeCard(
+                  snapshot.data!.docs[index], isDark);
             },
-            child: Text('Apply'),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 
-  Color _getPriorityColor(String priority) {
-    switch (priority.toLowerCase()) {
-      case 'high':
-        return Colors.red;
-      case 'medium':
-        return Colors.orange;
-      case 'low':
-        return Colors.green;
-      default:
-        return Colors.blue;
-    }
+  Widget _buildCompactNoticeCard(DocumentSnapshot doc, bool isDark) {
+    String priority = doc['priority'] ?? 'low';
+    Color pColor = priority == 'high' ? Colors.redAccent : Colors.blueAccent;
+
+// Track expanded state for each notice
+    bool isExpanded = false;
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1B2236) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: pColor.withOpacity(0.1)),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4))
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                        color: pColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8)),
+                    child: Text(priority.toUpperCase(),
+                        style: TextStyle(
+                            color: pColor,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold)),
+                  ),
+                  Text(
+                      DateFormat('dd MMM')
+                          .format((doc['timestamp'] as Timestamp).toDate()),
+                      style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(doc['title'],
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 6),
+              Text(doc['description'],
+                  style: TextStyle(
+                      color: isDark ? Colors.white60 : Colors.black54,
+                      fontSize: 13,
+                      height: 1.4),
+                  maxLines: isExpanded ? null : 2,
+                  overflow: isExpanded
+                      ? TextOverflow.visible
+                      : TextOverflow.ellipsis),
+
+// Show "See More/Less" button only if description is long
+              if (doc['description'].toString().length > 100) ...[
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        isExpanded = !isExpanded;
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: pColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            isExpanded ? 'See Less' : 'See All',
+                            style: TextStyle(
+                              color: pColor,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            isExpanded ? Icons.expand_less : Icons.expand_more,
+                            color: pColor,
+                            size: 14,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
   }
-
-  String _getTimeAgo(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inDays > 365) {
-      return '${(difference.inDays / 365).floor()} years ago';
-    } else if (difference.inDays > 30) {
-      return '${(difference.inDays / 30).floor()} months ago';
-    } else if (difference.inDays > 0) {
-      return '${difference.inDays} days ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours} hours ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} minutes ago';
-    } else {
-      return 'Just now';
-    }
-  }
-}
-
-class NoticeModel {
-  final String id;
-  final String title;
-  final String description;
-  final DateTime timestamp;
-  final String priority;
-  final String department;
-  final String semester;
-  final String targetType;
-
-  NoticeModel({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.timestamp,
-    required this.priority,
-    required this.department,
-    required this.semester,
-    required this.targetType,
-  });
 }

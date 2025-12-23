@@ -28,8 +28,7 @@ class _RoutineScreenState extends State<RoutineScreen>
     'Sunday'
   ];
   int _currentTabIndex = 0;
-  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
-  GlobalKey<RefreshIndicatorState>();
+  bool _isNavigating = false;
 
   @override
   void initState() {
@@ -80,8 +79,18 @@ class _RoutineScreenState extends State<RoutineScreen>
     }
   }
 
-  Future<void> _handleRefresh() async {
-    await _loadTimetable();
+  void _safeNavigateBack() {
+    // Debounce mechanism to prevent multiple taps
+    if (_isNavigating) return;
+    _isNavigating = true;
+
+    // Use rootNavigator for safety
+    Navigator.of(context, rootNavigator: true).pop();
+
+    // Reset after delay
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _isNavigating = false;
+    });
   }
 
   @override
@@ -95,46 +104,47 @@ class _RoutineScreenState extends State<RoutineScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final timetableProvider = Provider.of<TimetableProvider>(context);
 
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFF),
-      body: Stack(
-        children: [
-          _buildDecorativeHeader(isDark),
-          SafeArea(
-            child: Column(
-              children: [
-                _buildAppBar(isDark),
-                _buildDaySelector(isDark),
-                Expanded(
-                  child: RefreshIndicator(
-                    key: _refreshIndicatorKey,
-                    color: AppColors.themeColor,
-                    backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                    strokeWidth: 3.0,
-                    onRefresh: _handleRefresh,
-                    child: _buildContent(isDark, timetableProvider),
+    return WillPopScope(
+      onWillPop: () async {
+        // Handle Android back button
+        _safeNavigateBack();
+        return false; // Prevent default behavior
+      },
+      child: Scaffold(
+        backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFF),
+        body: Stack(
+          children: [
+            _buildDecorativeHeader(isDark),
+            SafeArea(
+              child: Column(
+                children: [
+                  _buildCuteAppBar(isDark),
+                  _buildDaySelector(isDark),
+                  Expanded(
+                    child: Consumer<TimetableProvider>(
+                      builder: (context, provider, child) {
+                        final hasData = provider.getClassesForDay(_days[_currentTabIndex]).isNotEmpty;
+
+                        if (provider.isWeeklyLoading && !hasData) {
+                          return _buildLoadingWidget();
+                        }
+
+                        return TabBarView(
+                          controller: _tabController,
+                          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                          children: _days
+                              .map((day) => _buildDayContent(day, isDark, provider))
+                              .toList(),
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    );
-  }
-
-  Widget _buildContent(bool isDark, TimetableProvider provider) {
-    final hasData = provider.getClassesForDay(_days[_currentTabIndex]).isNotEmpty;
-    if (provider.isWeeklyLoading && !hasData) {
-      return _buildLoadingWidget();
-    }
-
-    return TabBarView(
-      controller: _tabController,
-      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-      children: _days
-          .map((day) => _buildDayContent(day, isDark, provider))
-          .toList(),
     );
   }
 
@@ -160,61 +170,103 @@ class _RoutineScreenState extends State<RoutineScreen>
     );
   }
 
-  Widget _buildAppBar(bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 10, 24, 5),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Class Routine",
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w900,
-                  color: isDark ? Colors.white : const Color(0xFF1E293B),
-                ),
-              ),
-              Text(
-                "Stay organized, stay ahead",
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey.shade500,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          _actionButton(Icons.sync_rounded, () => _loadTimetable()),
+  Widget _buildCuteAppBar(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 15, 20, 10),
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        boxShadow: [
+          if (isDark)
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
         ],
       ),
-    );
-  }
-
-  Widget _actionButton(IconData icon, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(15),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+      child: Row(
+        children: [
+          // Cute Back Button - FIXED
+          InkWell(
+            onTap: _safeNavigateBack,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white.withOpacity(0.1) : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.arrow_back_rounded,
+                color: isDark ? Colors.white : AppColors.themeColor,
+                size: 20,
+              ),
             ),
-          ],
-        ),
-        child: Icon(
-          icon,
-          color: AppColors.themeColor,
-          size: 24,
-        ),
+          ),
+
+          const SizedBox(width: 15),
+
+          // Cute Title Section
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Class Routine",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: isDark ? Colors.white : const Color(0xFF1E293B),
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  "Stay organized, stay ahead",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade500,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Cute Sync Button
+          InkWell(
+            onTap: () => _loadTimetable(),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.themeColor,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.themeColor.withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.refresh_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -222,7 +274,7 @@ class _RoutineScreenState extends State<RoutineScreen>
   Widget _buildDaySelector(bool isDark) {
     return Container(
       height: 60,
-      margin: const EdgeInsets.symmetric(vertical: 15),
+      margin: const EdgeInsets.symmetric(vertical: 10),
       child: TabBar(
         controller: _tabController,
         isScrollable: true,
@@ -240,7 +292,7 @@ class _RoutineScreenState extends State<RoutineScreen>
           return Tab(
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppColors.themeColor
@@ -254,16 +306,35 @@ class _RoutineScreenState extends State<RoutineScreen>
                     offset: const Offset(0, 4),
                   ),
                 ]
-                    : [],
+                    : [
+                  if (!isDark)
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 5,
+                      offset: const Offset(0, 2),
+                    ),
+                ],
+                border: Border.all(
+                  color: isToday && !isSelected
+                      ? AppColors.themeColor.withOpacity(0.3)
+                      : Colors.transparent,
+                  width: 1.5,
+                ),
               ),
               child: Row(
                 children: [
-                  if (isToday) const Text("📍 ", style: TextStyle(fontSize: 12)),
+                  if (isToday)
+                    Icon(
+                      Icons.location_on_rounded,
+                      size: 12,
+                      color: isSelected ? Colors.white : AppColors.themeColor,
+                    ),
+                  const SizedBox(width: 4),
                   Text(
                     isToday ? "Today" : day.substring(0, 3),
                     style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                      fontSize: 13,
+                      fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
                       color: isSelected
                           ? Colors.white
                           : (isDark ? Colors.white70 : Colors.grey.shade600),
@@ -536,9 +607,58 @@ class _RoutineScreenState extends State<RoutineScreen>
 
   Widget _buildLoadingWidget() {
     return Center(
-      child: CircularProgressIndicator(
-        color: AppColors.themeColor,
-        strokeWidth: 3,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(
+            color: AppColors.themeColor,
+            strokeWidth: 3,
+          ),
+          const SizedBox(height: 20),
+          Text(
+            "Loading timetable...",
+            style: TextStyle(
+              color: Colors.grey.shade500,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorWidget(String error) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(30),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.05),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.error_outline_rounded, size: 60, color: Colors.red),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            "Failed to load timetable",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: Colors.red,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            error,
+            style: TextStyle(
+              color: Colors.grey.shade500,
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

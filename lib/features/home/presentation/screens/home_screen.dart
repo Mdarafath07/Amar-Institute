@@ -14,6 +14,7 @@ import '../../../../providers/user_provider.dart';
 import '../../../../providers/timetable_provider.dart';
 import '../../../../models/timetable_model.dart';
 import '../../../../resource/presentation/resource_screen.dart';
+import '../../../ai_tools/presentation/screens/ai_screen.dart';
 import '../../../routine/presentation/screens/routine_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -116,7 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
           /// 🔥 Big transparent Lottie FAB
           floatingActionButton: GestureDetector(
             onTap: () {
-              // TODO: Open assistant / chatbot
+              Navigator.push(context, MaterialPageRoute(builder: (context)=>AiScreen()));
             },
             child: SizedBox(
               height: 100,
@@ -615,7 +616,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showComingSoon(String featureName) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text("$featureName is coming soon! 🚀"),
+        content: Text("$featureName is coming soon!"),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         backgroundColor: AppColors.themeColor,

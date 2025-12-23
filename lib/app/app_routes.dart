@@ -3,7 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../exam/presentation/screens/exam_routine.dart';
-import '../features/ai_tools/presentation/screens/ai_tools_screen.dart';
+import '../features/ai_tools/presentation/screens/ai_screen.dart';
 import '../features/auth/presentation/screens/intro_screen.dart';
 import '../features/auth/presentation/screens/sing_in_screen.dart';
 import '../features/auth/presentation/screens/sing_up_screen.dart';
@@ -27,8 +27,8 @@ class AppRoutes {
       widget = const SingUpScreen();
     } else if (setting.name == MainNavHolderScreen.name) {
       widget = const MainNavHolderScreen();
-    }else if (setting.name == AIToolsScreen.name) {
-      widget = const AIToolsScreen();
+    }else if (setting.name == AiScreen.name) {
+      widget = const AiScreen();
     } else if (setting.name == RoutineScreen.name) {
       widget = const RoutineScreen();
     } else if (setting.name == ExamRoutine.name) {

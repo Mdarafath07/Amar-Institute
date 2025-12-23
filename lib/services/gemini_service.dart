@@ -1,66 +1,53 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'dart:io';
+import 'package:google_generative_ai/google_generative_ai.dart';
 
 class GeminiService {
-  // TODO: Replace with your actual Gemini API key from Google AI Studio
-  // Get your API key from: https://makersuite.google.com/app/apikey
-  static const String apiKey = "api";
-  static const String baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+  late GenerativeModel _model;
+  late ChatSession _chat;
 
-  Future<String> generateResponse(String prompt) async {
-    if (apiKey == 'api') {
-      return 'Please configure your Gemini API key in lib/services/gemini_service.dart';
-    }
+  GeminiService() {
+    // আপনার API Key টি নিশ্চিত করুন
+    const apiKey = 'AIzaSyCb5ejClDZYCq0lUg-YJRv2HdMkKFKcEYE';
 
+    _model = GenerativeModel(
+      // 'gemini-1.5-flash-latest' অথবা 'gemini-pro' ব্যবহার করা নিরাপদ
+      model: 'gemini-2,0-flash',
+      apiKey: apiKey,
+      // সিস্টেম ইন্সট্রাকশন যা AI কে স্টাডি অ্যাসিস্ট্যান্ট হিসেবে কাজ করতে বাধ্য করবে
+      systemInstruction: Content.system(
+          'You are a professional AI Study Assistant. Your role is to solve academic problems, '
+              'explain concepts simply, and help with homework. Use bullet points for clarity.'
+      ),
+    );
+
+    // চ্যাট সেশন শুরু করুন যাতে এটি আগের কথা মনে রাখতে পারে
+    _chat = _model.startChat();
+  }
+
+  Future<String> answerQuestion(String question, {File? imageFile}) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl?key=$apiKey'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'contents': [
-            {
-              'parts': [
-                {'text': prompt}
-              ]
-            }
-          ]
-        }),
-      );
+      if (imageFile != null) {
+        final imageBytes = await imageFile.readAsBytes();
+        final content = [
+          Content.multi([
+            TextPart(question.isEmpty ? 'Analyze this study material' : question),
+            DataPart('image/jpeg', imageBytes),
+          ])
+        ];
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final candidates = data['candidates'];
-        if (candidates != null && candidates.isNotEmpty) {
-          final content = candidates[0]['content'];
-          if (content != null && content['parts'] != null) {
-            final text = content['parts'][0]['text'];
-            return text ?? 'Sorry, I could not generate a response.';
-          }
-        }
-        return 'Sorry, I could not generate a response.';
+        final response = await _model.generateContent(content);
+        return response.text ?? 'I could not read the image. Please try again.';
       } else {
-        return 'Error: ${response.statusCode} - ${response.body}';
+        // টেক্সট চ্যাটের জন্য sendMessage ব্যবহার করুন
+        final response = await _chat.sendMessage(Content.text(question));
+        return response.text ?? 'I am sorry, I could not generate an answer.';
       }
     } catch (e) {
-      return 'Error: ${e.toString()}';
+      print('Gemini Error: $e');
+      if (e.toString().contains('not found')) {
+        return 'The selected AI model is not available right now. Please check your API key.';
+      }
+      return 'I am having trouble connecting. Please check your internet.';
     }
-  }
-
-  Future<String> getStudySummary(String subject, List<String> topics) async {
-    final prompt = '''
-You are an AI study assistant. Provide a concise summary for the subject: $subject
-Topics to cover: ${topics.join(', ')}
-Please provide a helpful study guide.
-''';
-    return await generateResponse(prompt);
-  }
-
-  Future<String> answerQuestion(String question, {String? context}) async {
-    String prompt = question;
-    if (context != null) {
-      prompt = 'Context: $context\n\nQuestion: $question';
-    }
-    return await generateResponse(prompt);
   }
 }
-

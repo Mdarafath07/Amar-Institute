@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
-import '../../../../providers/user_provider.dart'; // আপনার প্রোজেক্ট অনুযায়ী পাথ ঠিক করুন
-import '../../../../app/app_colors.dart'; // আপনার কালার ফাইল অনুযায়ী
+import '../../../../providers/user_provider.dart';
+import '../../../../app/app_colors.dart';
 
 class ExamRoutine extends StatefulWidget {
   const ExamRoutine({super.key});
@@ -15,51 +15,111 @@ class ExamRoutine extends StatefulWidget {
 class _ExamRoutineState extends State<ExamRoutine> {
   @override
   Widget build(BuildContext context) {
-    // ইউজারের ডাটা প্রোভাইডার থেকে নেওয়া হচ্ছে
-    final userProvider = Provider.of<UserProvider>(context);
-    final user = userProvider.user;
+    final userProvider = Provider.of<UserProvider>(context); //
+    final user = userProvider.user; //
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // ইউজারের ডিপার্টমেন্ট এবং সেমিস্টার অনুযায়ী ডকুমেন্ট আইডি তৈরি
-    String department = user?.department ?? 'CST';
-    String semester = user?.semester ?? '1st';
-    String docId = "$department-$semester";
+    String department = user?.department ?? 'CST'; //
+    String semester = user?.semester ?? '1st'; //
+    String docId = "$department-$semester"; //
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFF),
+      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       appBar: AppBar(
-        title: const Text("My Exam Routine", style: TextStyle(fontWeight: FontWeight.bold)),
+        toolbarHeight: 90,
+        title: Column(
+          children: [
+            const Text(
+              "Exam Schedule",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 22,
+                letterSpacing: 1.0,
+                color: Colors.white,
+                shadows: [
+                  Shadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 2))
+                ],
+              ),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              height: 4,
+              width: 40,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(10),
+              ),
+            )
+          ],
+        ),
         centerTitle: true,
-        backgroundColor: Colors.indigo[800],
         elevation: 0,
+        backgroundColor: Colors.transparent, // Background Gradient handle করবে
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            // প্রিমিয়াম গ্রেডিয়েন্ট ইফেক্ট
+            gradient: LinearGradient(
+              colors: [AppColors.themeColor, AppColors.secendthemeColor],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            // নিচের দিকে বড় রাউন্ড শেপ এবং শ্যাডো
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(35),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.themeColor.withOpacity(0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              // Decorative Elements (Blobs)
+              Positioned(
+                top: -20,
+                right: -10,
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundColor: Colors.white.withOpacity(0.1),
+                ),
+              ),
+
+              // আরও একটি ছোট কিউট ডট
+              Positioned(
+                top: 40,
+                left: 20,
+                child: Container(
+                  height: 10,
+                  width: 10,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
       body: Column(
         children: [
-          _buildUserInfoHeader(department, semester, isDark),
+          _buildGlassHeader(department, semester),
           Expanded(
             child: StreamBuilder<DocumentSnapshot>(
-              // এডমিন প্যানেল থেকে পাঠানো ডাটা এখানে রিড করা হচ্ছে
-              stream: FirebaseFirestore.instance
-                  .collection('exam_routines')
-                  .doc(docId)
-                  .snapshots(),
+              stream: FirebaseFirestore.instance.collection('exam_routines').doc(docId).snapshots(), //
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+                if (!snapshot.hasData || !snapshot.data!.exists) return _buildEmptyState();
 
-                if (!snapshot.hasData || !snapshot.data!.exists) {
-                  return _buildEmptyState(isDark);
-                }
-
-                var exams = snapshot.data!['exams'] as List;
+                var data = snapshot.data!.data() as Map<String, dynamic>;
+                List exams = data['exams'] ?? []; //
 
                 return ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(20),
                   itemCount: exams.length,
-                  itemBuilder: (context, i) {
-                    return _buildExamCard(exams[i], isDark);
-                  },
+                  itemBuilder: (context, index) => _buildTimelineCard(exams[index], isDark),
                 );
               },
             ),
@@ -69,87 +129,86 @@ class _ExamRoutineState extends State<ExamRoutine> {
     );
   }
 
-  // ইউজারের বর্তমান সেকশন দেখানোর জন্য হেডার
-  Widget _buildUserInfoHeader(String dept, String sem, bool isDark) {
+  Widget _buildGlassHeader(String dept, String sem) {
     return Container(
-      padding: const EdgeInsets.all(15),
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
       decoration: BoxDecoration(
-        color: Colors.indigo[800],
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
-        ),
+        color: AppColors.themeColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(25),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _infoChip("Dept: $dept"),
-          const SizedBox(width: 10),
-          _infoChip("Semester: $sem"),
+          _headerItem("Dept", dept),
+          Container(height: 30, width: 1, color: Colors.grey.withOpacity(0.3)),
+          _headerItem("Semester", sem),
         ],
       ),
     );
   }
 
-  Widget _infoChip(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(text, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+  Widget _headerItem(String label, String val) {
+    return Column(
+      children: [
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(val, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.themeColor)),
+      ],
     );
   }
 
-  // পরীক্ষার রুটিনের কার্ড ডিজাইন
-  Widget _buildExamCard(Map<String, dynamic> exam, bool isDark) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(15),
-        leading: CircleAvatar(
-          backgroundColor: Colors.indigo[50],
-          child: const Icon(Icons.assignment, color: Colors.indigo),
-        ),
-        title: Text(
-          exam['subjectName'] ?? 'Subject',
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 5),
-            Text("Code: ${exam['subjectCode']} | Room: ${exam['room']}"),
-            Text("Date: ${exam['date']}", style: const TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        trailing: Text(
-          exam['startTime'] ?? '',
-          style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.redAccent),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(bool isDark) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+  Widget _buildTimelineCard(Map<String, dynamic> exam, bool isDark) {
+    return IntrinsicHeight(
+      child: Row(
         children: [
-          const Icon(Icons.event_busy, size: 80, color: Colors.grey),
-          const SizedBox(height: 10),
-          Text(
-            "No Exam Routine Found",
-            style: TextStyle(fontSize: 18, color: isDark ? Colors.white : Colors.black54),
+          Column(
+            children: [
+              Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: AppColors.themeColor, shape: BoxShape.circle)),
+              Expanded(child: Container(width: 2, color: AppColors.themeColor.withOpacity(0.2))),
+            ],
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 24),
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.cardDark : AppColors.cardLight,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10)],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(exam['subjectName'] ?? 'Subject', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Icon(Icons.access_time_filled, size: 16, color: AppColors.accentColor),
+                      const SizedBox(width: 5),
+                      Text(exam['startTime'] ?? '', style: TextStyle(color: AppColors.accentColor, fontWeight: FontWeight.bold)),
+                      const Spacer(),
+                      const Icon(Icons.meeting_room_rounded, size: 16, color: Colors.blue),
+                      const SizedBox(width: 5),
+                      Text("Room ${exam['room']}", style: const TextStyle(color: Colors.blue)),
+                    ],
+                  ),
+                  const Divider(height: 24),
+                  Row(
+                    children: [
+                      const Icon(Icons.calendar_month, size: 16, color: Colors.grey),
+                      const SizedBox(width: 5),
+                      Text(exam['date'] ?? '', style: const TextStyle(color: Colors.grey)),
+                    ],
+                  )
+                ],
+              ),
+            ),
           ),
         ],
       ),
     );
   }
+
+  Widget _buildEmptyState() => const Center(child: Text("No Exams Yet! 🎉"));
 }
