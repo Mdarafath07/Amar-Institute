@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:amar_institute/services/api.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 class GeminiService {
@@ -6,21 +7,20 @@ class GeminiService {
   late ChatSession _chat;
 
   GeminiService() {
-    // আপনার API Key টি নিশ্চিত করুন
-    const apiKey = 'AIzaSyCb5ejClDZYCq0lUg-YJRv2HdMkKFKcEYE';
+
+
 
     _model = GenerativeModel(
-      // 'gemini-1.5-flash-latest' অথবা 'gemini-pro' ব্যবহার করা নিরাপদ
+
       model: 'gemini-2,0-flash',
-      apiKey: apiKey,
-      // সিস্টেম ইন্সট্রাকশন যা AI কে স্টাডি অ্যাসিস্ট্যান্ট হিসেবে কাজ করতে বাধ্য করবে
+      apiKey: Apis.gemini,
+
       systemInstruction: Content.system(
           'You are a professional AI Study Assistant. Your role is to solve academic problems, '
               'explain concepts simply, and help with homework. Use bullet points for clarity.'
       ),
     );
 
-    // চ্যাট সেশন শুরু করুন যাতে এটি আগের কথা মনে রাখতে পারে
     _chat = _model.startChat();
   }
 

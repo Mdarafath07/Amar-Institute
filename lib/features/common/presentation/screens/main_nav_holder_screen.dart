@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/services.dart';
 import '../../../../app/app_colors.dart';
+import '../../../../app/assets_path.dart';
 import '../../../../notice/presentation/screens/notice_screen.dart';
 import '../../../home/presentation/screens/home_screen.dart';
 import '../../../routine/presentation/screens/routine_screen.dart';
@@ -42,7 +43,7 @@ class _MainNavHolderScreenState extends State<MainNavHolderScreen> with WidgetsB
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
-      // App background এ যাচ্ছে
+
     }
   }
 
@@ -52,7 +53,7 @@ class _MainNavHolderScreenState extends State<MainNavHolderScreen> with WidgetsB
 
     return WillPopScope(
       onWillPop: () async {
-        // Always minimize app when back is pressed
+
         SystemNavigator.pop();
         return false;
       },
@@ -66,10 +67,45 @@ class _MainNavHolderScreenState extends State<MainNavHolderScreen> with WidgetsB
           index: _page,
           height: 60.0,
           items: <Widget>[
-            Icon(Icons.home_rounded, size: 30, color: _page == 0 ? Colors.white : (isDark ? Colors.white70 : Colors.black54)),
-            Icon(Icons.calendar_today_rounded, size: 30, color: _page == 1 ? Colors.white : (isDark ? Colors.white70 : Colors.black54)),
-            Icon(Icons.notifications_active, size: 30, color: _page == 2 ? Colors.white : (isDark ? Colors.white70 : Colors.black54)),
-            Icon(Icons.person_rounded, size: 30, color: _page == 3 ? Colors.white : (isDark ? Colors.white70 : Colors.black54)),
+            // Home Icon
+            Image.asset(
+              AssetsPath.home,
+              width: 30,
+              height: 30,
+              color: _page == 0
+                  ? Colors.white
+                  : (isDark ? Colors.white70 : Colors.black54),
+            ),
+
+            // Routine Icon
+            Image.asset(
+              AssetsPath.routine,
+              width: 30,
+              height: 30,
+              color: _page == 1
+                  ? Colors.white
+                  : (isDark ? Colors.white70 : Colors.black54),
+            ),
+
+            // Notice Icon
+            Image.asset(
+              AssetsPath.notice,
+              width: 30,
+              height: 30,
+              color: _page == 2
+                  ? Colors.white
+                  : (isDark ? Colors.white70 : Colors.black54),
+            ),
+
+            // Profile Icon
+            Image.asset(
+              AssetsPath.profile,
+              width: 30,
+              height: 30,
+              color: _page == 3
+                  ? Colors.white
+                  : (isDark ? Colors.white70 : Colors.black54),
+            ),
           ],
           color: isDark ? const Color(0xFF1E293B) : Colors.white,
           buttonBackgroundColor: AppColors.themeColor,

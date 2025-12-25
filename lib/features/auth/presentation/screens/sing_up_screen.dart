@@ -106,7 +106,7 @@ class _SingUpScreenState extends State<SingUpScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Roll No এবং Reg No একসাথে Row এ
+
                 Row(
                   children: [
                     Expanded(
@@ -197,7 +197,7 @@ class _SingUpScreenState extends State<SingUpScreen> {
                 ),
                 const SizedBox(height: 25),
 
-                // --- লগইন পেজে যাওয়ার বাটন ---
+
                 Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,

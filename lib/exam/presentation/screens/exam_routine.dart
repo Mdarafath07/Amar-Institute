@@ -15,13 +15,13 @@ class ExamRoutine extends StatefulWidget {
 class _ExamRoutineState extends State<ExamRoutine> {
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context); //
-    final user = userProvider.user; //
+    final userProvider = Provider.of<UserProvider>(context);
+    final user = userProvider.user;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    String department = user?.department ?? 'CST'; //
-    String semester = user?.semester ?? '1st'; //
-    String docId = "$department-$semester"; //
+    String department = user?.department ?? 'CST';
+    String semester = user?.semester ?? '1st';
+    String docId = "$department-$semester";
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,

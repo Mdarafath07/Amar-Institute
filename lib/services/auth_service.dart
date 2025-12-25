@@ -42,6 +42,9 @@ class AuthService {
         return userModel;
       }
       return null;
+    } on FirebaseAuthException catch (e) {
+
+      rethrow;
     } catch (e) {
       throw Exception('Sign up failed: $e');
     }
@@ -61,6 +64,9 @@ class AuthService {
         return await _firestoreService.getUser(userCredential.user!.uid);
       }
       return null;
+    } on FirebaseAuthException catch (e) {
+
+      rethrow;
     } catch (e) {
       throw Exception('Sign in failed: $e');
     }
@@ -71,7 +77,13 @@ class AuthService {
   }
 
   Future<void> resetPassword(String email) async {
-    await _auth.sendPasswordResetEmail(email: email);
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+// Firebase specific errors rethrow with original exception
+      rethrow;
+    } catch (e) {
+      throw Exception('Password reset failed: $e');
+    }
   }
 }
-

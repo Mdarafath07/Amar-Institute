@@ -21,6 +21,36 @@ class UserModel {
     this.phoneNumber,
   });
 
+  // ✅ JSON থেকে UserModel তৈরি করার মেথড (নতুন যোগ করুন)
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    return UserModel(
+      uid: json['uid'] ?? '',
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
+      department: json['department'] ?? '',
+      semester: json['semester'] ?? '',
+      profileImageUrl: json['profileImageUrl'],
+      rollNo: json['rollNo'],
+      regNo: json['regNo'],
+      phoneNumber: json['phoneNumber'],
+    );
+  }
+
+  // ✅ UserModel থেকে JSON তৈরি করার মেথড (নতুন যোগ করুন)
+  Map<String, dynamic> toJson() {
+    return {
+      'uid': uid,
+      'name': name,
+      'email': email,
+      'department': department,
+      'semester': semester,
+      'profileImageUrl': profileImageUrl,
+      'rollNo': rollNo,
+      'regNo': regNo,
+      'phoneNumber': phoneNumber,
+    };
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'uid': uid,
@@ -72,5 +102,9 @@ class UserModel {
       phoneNumber: phoneNumber ?? this.phoneNumber,
     );
   }
-}
 
+  @override
+  String toString() {
+    return 'UserModel(uid: $uid, name: $name, email: $email, department: $department, semester: $semester)';
+  }
+}

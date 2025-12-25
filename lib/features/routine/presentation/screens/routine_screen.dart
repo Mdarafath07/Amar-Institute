@@ -1,3 +1,4 @@
+import 'package:amar_institute/app/assets_path.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../app/app_colors.dart';
@@ -80,14 +81,11 @@ class _RoutineScreenState extends State<RoutineScreen>
   }
 
   void _safeNavigateBack() {
-    // Debounce mechanism to prevent multiple taps
     if (_isNavigating) return;
     _isNavigating = true;
 
-    // Use rootNavigator for safety
     Navigator.of(context, rootNavigator: true).pop();
 
-    // Reset after delay
     Future.delayed(const Duration(milliseconds: 500), () {
       _isNavigating = false;
     });
@@ -106,12 +104,12 @@ class _RoutineScreenState extends State<RoutineScreen>
 
     return WillPopScope(
       onWillPop: () async {
-        // Handle Android back button
         _safeNavigateBack();
-        return false; // Prevent default behavior
+        return false;
       },
       child: Scaffold(
-        backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFF),
+        backgroundColor:
+            isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFF),
         body: Stack(
           children: [
             _buildDecorativeHeader(isDark),
@@ -123,7 +121,9 @@ class _RoutineScreenState extends State<RoutineScreen>
                   Expanded(
                     child: Consumer<TimetableProvider>(
                       builder: (context, provider, child) {
-                        final hasData = provider.getClassesForDay(_days[_currentTabIndex]).isNotEmpty;
+                        final hasData = provider
+                            .getClassesForDay(_days[_currentTabIndex])
+                            .isNotEmpty;
 
                         if (provider.isWeeklyLoading && !hasData) {
                           return _buildLoadingWidget();
@@ -131,9 +131,11 @@ class _RoutineScreenState extends State<RoutineScreen>
 
                         return TabBarView(
                           controller: _tabController,
-                          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                          physics: const BouncingScrollPhysics(
+                              parent: AlwaysScrollableScrollPhysics()),
                           children: _days
-                              .map((day) => _buildDayContent(day, isDark, provider))
+                              .map((day) =>
+                                  _buildDayContent(day, isDark, provider))
                               .toList(),
                         );
                       },
@@ -186,7 +188,6 @@ class _RoutineScreenState extends State<RoutineScreen>
       ),
       child: Row(
         children: [
-          // Cute Back Button - FIXED
           InkWell(
             onTap: _safeNavigateBack,
             borderRadius: BorderRadius.circular(12),
@@ -241,7 +242,6 @@ class _RoutineScreenState extends State<RoutineScreen>
             ),
           ),
 
-          // Cute Sync Button
           InkWell(
             onTap: () => _loadTimetable(),
             borderRadius: BorderRadius.circular(12),
@@ -300,20 +300,20 @@ class _RoutineScreenState extends State<RoutineScreen>
                 borderRadius: BorderRadius.circular(25),
                 boxShadow: isSelected
                     ? [
-                  BoxShadow(
-                    color: AppColors.themeColor.withOpacity(0.4),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
+                        BoxShadow(
+                          color: AppColors.themeColor.withOpacity(0.4),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
                     : [
-                  if (!isDark)
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 5,
-                      offset: const Offset(0, 2),
-                    ),
-                ],
+                        if (!isDark)
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 5,
+                            offset: const Offset(0, 2),
+                          ),
+                      ],
                 border: Border.all(
                   color: isToday && !isSelected
                       ? AppColors.themeColor.withOpacity(0.3)
@@ -334,7 +334,8 @@ class _RoutineScreenState extends State<RoutineScreen>
                     isToday ? "Today" : day.substring(0, 3),
                     style: TextStyle(
                       fontSize: 13,
-                      fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
+                      fontWeight:
+                          isSelected ? FontWeight.w900 : FontWeight.w600,
                       color: isSelected
                           ? Colors.white
                           : (isDark ? Colors.white70 : Colors.grey.shade600),
@@ -365,7 +366,8 @@ class _RoutineScreenState extends State<RoutineScreen>
 
         final period = classes[index - 1];
         bool isToday = day == _getTodayName();
-        bool isLive = isToday && _isCurrentlyRunning(period.startTime, period.endTime);
+        bool isLive =
+            isToday && _isCurrentlyRunning(period.startTime, period.endTime);
         bool isFinished = false;
 
         if (isToday) {
@@ -373,7 +375,8 @@ class _RoutineScreenState extends State<RoutineScreen>
             final now = DateTime.now();
             final format = DateFormat.jm();
             final endDateTime = format.parse(period.endTime);
-            final realEndTime = DateTime(now.year, now.month, now.day, endDateTime.hour, endDateTime.minute);
+            final realEndTime = DateTime(now.year, now.month, now.day,
+                endDateTime.hour, endDateTime.minute);
             isFinished = now.isAfter(realEndTime);
           } catch (_) {}
         }
@@ -433,7 +436,9 @@ class _RoutineScreenState extends State<RoutineScreen>
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: isLive ? statusColor.withOpacity(0.1) : Colors.black.withOpacity(0.04),
+            color: isLive
+                ? statusColor.withOpacity(0.1)
+                : Colors.black.withOpacity(0.04),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -452,7 +457,9 @@ class _RoutineScreenState extends State<RoutineScreen>
                 width: 90,
                 color: isLive
                     ? statusColor
-                    : (isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F5F9)),
+                    : (isDark
+                        ? Colors.white.withOpacity(0.05)
+                        : const Color(0xFFF1F5F9)),
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -499,22 +506,37 @@ class _RoutineScreenState extends State<RoutineScreen>
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        period.courseCode ?? "Subject",
+                        period.courseCode.isNotEmpty
+                            ? period.courseCode
+                            : "Subject",
                         style: TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 18,
                           color: isFinished
                               ? Colors.grey
-                              : (isDark ? Colors.white : const Color(0xFF1E293B)),
-                          decoration: isFinished ? TextDecoration.lineThrough : null,
+                              : (isDark
+                                  ? Colors.white
+                                  : const Color(0xFF1E293B)),
+                          decoration:
+                              isFinished ? TextDecoration.lineThrough : null,
                         ),
                       ),
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          _iconInfo(Icons.person_rounded, period.instructor ?? "TBA", isDark),
+                          _iconInfo(
+                              Icons.person_rounded,
+                              period.instructor.isNotEmpty
+                                  ? period.instructor
+                                  : "TBA",
+                              isDark),
                           const SizedBox(width: 15),
-                          _iconInfo(Icons.location_on_rounded, "Room ${period.room}", isDark),
+                          _iconInfo(
+                              Icons.location_on_rounded,
+                              period.room.isNotEmpty
+                                  ? "Room ${period.room}"
+                                  : "Room N/A",
+                              isDark),
                         ],
                       ),
                     ],
@@ -581,7 +603,8 @@ class _RoutineScreenState extends State<RoutineScreen>
               color: AppColors.themeColor.withOpacity(0.05),
               shape: BoxShape.circle,
             ),
-            child: const Text("🎉", style: TextStyle(fontSize: 60)),
+            child:
+            Image.asset(AssetsPath.enjoy,width: 200,)
           ),
           const SizedBox(height: 20),
           Text(
@@ -638,7 +661,8 @@ class _RoutineScreenState extends State<RoutineScreen>
               color: Colors.red.withOpacity(0.05),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.error_outline_rounded, size: 60, color: Colors.red),
+            child: const Icon(Icons.error_outline_rounded,
+                size: 60, color: Colors.red),
           ),
           const SizedBox(height: 20),
           Text(

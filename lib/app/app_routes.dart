@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../exam/presentation/screens/exam_routine.dart';
 import '../features/ai_tools/presentation/screens/ai_screen.dart';
+import '../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../features/auth/presentation/screens/intro_screen.dart';
 import '../features/auth/presentation/screens/sing_in_screen.dart';
 import '../features/auth/presentation/screens/sing_up_screen.dart';
@@ -37,6 +38,8 @@ class AppRoutes {
       widget = const NoticeScreen();
     }else if (setting.name == ResourceScreen.name) {
       widget = const ResourceScreen();
+    }else if (setting.name == ForgotPasswordScreen.name) {
+      widget = const ForgotPasswordScreen();
     }
     return MaterialPageRoute(builder: (ctx) => widget);
   }

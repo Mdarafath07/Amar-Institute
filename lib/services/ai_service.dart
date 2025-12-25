@@ -1,16 +1,16 @@
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 class AiService {
-  // এখানে আপনার Google AI Studio থেকে প্রাপ্ত API Key টি বসান
+
   static const String _apiKey = "api";
 
   static Future<String> getResponse(String prompt) async {
     try {
-      // বিভিন্ন মডেল চেষ্টা করার লিস্ট
+
       final List<String> modelsToTry = [
-        'gemini-pro',        // সবচেয়ে কমন
-        'gemini-1.0-pro',    // আরেকটি ভার্সন
-        'models/text-bison-001', // পুরনো মডেল
+        'gemini-pro',
+        'gemini-1.0-pro',
+        'models/text-bison-001',
       ];
 
       String? lastError;
@@ -39,7 +39,7 @@ class AiService {
         } catch (e) {
           lastError = e.toString();
           print("Failed with $modelName: $e");
-          continue; // পরবর্তী মডেল চেষ্টা করুন
+          continue;
         }
       }
 
@@ -65,7 +65,7 @@ class AiService {
     }
   }
 
-  // API Key ভ্যালিডেশন মেথড
+
   static Future<bool> validateApiKey() async {
     try {
       final model = GenerativeModel(
@@ -73,7 +73,6 @@ class AiService {
         apiKey: _apiKey,
       );
 
-      // একটি ছোট রিকোয়েস্ট দিয়ে টেস্ট করুন
       final content = [Content.text("Hello")];
       final response = await model.generateContent(content);
 

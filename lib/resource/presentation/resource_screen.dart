@@ -37,7 +37,7 @@ class _ResourceScreenState extends State<ResourceScreen> {
     try {
       debugPrint("Loading user information...");
 
-      // Option 1: Try from UserProvider first
+
       try {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
         final user = userProvider.user;
@@ -50,7 +50,7 @@ class _ResourceScreenState extends State<ResourceScreen> {
             _isLoading = false;
           });
 
-          // Save to SharedPreferences for future
+
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('userDepartment', _userDepartment);
           await prefs.setString('userSemester', _userSemester);
@@ -60,7 +60,7 @@ class _ResourceScreenState extends State<ResourceScreen> {
         debugPrint("UserProvider error: $e");
       }
 
-      // Option 2: Try from SharedPreferences
+
       final prefs = await SharedPreferences.getInstance();
       final prefDept = prefs.getString('userDepartment');
       final prefSem = prefs.getString('userSemester');
@@ -75,7 +75,6 @@ class _ResourceScreenState extends State<ResourceScreen> {
         return;
       }
 
-      // Option 3: Load from Firebase directly
       final currentUser = _auth.currentUser;
       if (currentUser != null) {
         debugPrint("Loading from Firebase for UID: ${currentUser.uid}");
@@ -91,7 +90,7 @@ class _ResourceScreenState extends State<ResourceScreen> {
 
           debugPrint("Firebase Data: $dept, $sem");
 
-          // Save to SharedPreferences
+
           await prefs.setString('userDepartment', dept);
           await prefs.setString('userSemester', sem);
 
@@ -108,7 +107,7 @@ class _ResourceScreenState extends State<ResourceScreen> {
         debugPrint("No user logged in");
       }
 
-      // Option 4: Use default values
+
       debugPrint("Using default values: CST, 1st");
       setState(() {
         _userDepartment = 'CST';
@@ -125,7 +124,7 @@ class _ResourceScreenState extends State<ResourceScreen> {
     }
   }
 
-  // লিঙ্ক ওপেন করার ফাংশন
+
   Future<void> _openLink(String urlString) async {
     if (urlString.isEmpty) {
       _showSnackBar("Link is empty", Colors.orange);

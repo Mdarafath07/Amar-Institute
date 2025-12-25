@@ -1,8 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'dart:async';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/timetable_model.dart';
 import '../services/firestore_service.dart';
-import 'package:intl/intl.dart';
+import '../services/notification_service.dart';
 
 class TimetableProvider with ChangeNotifier {
   final FirestoreService _firestoreService = FirestoreService();
@@ -14,6 +18,14 @@ class TimetableProvider with ChangeNotifier {
   String? _currentDepartment;
   String? _currentSemester;
   String? _errorMessage;
+
+  // Caching keys
+  static const String _cachedTodayClassesKey = 'cached_today_classes';
+  static const String _cachedWeeklyClassesKey = 'cached_weekly_classes';
+  static const String _cachedHolidayKey = 'cached_is_holiday';
+  static const String _cachedDepartmentKey = 'cached_department';
+  static const String _cachedSemesterKey = 'cached_semester';
+  static const String _cachedTimestampKey = 'cached_timestamp';
 
   // Stream Controller for real-time updates
   final StreamController<Map<String, dynamic>> _timetableStreamController =
@@ -50,10 +62,10 @@ class TimetableProvider with ChangeNotifier {
     _currentDepartment = department;
     _currentSemester = semester;
     notifyListeners();
-    _updateStream(); // Update stream
+    _updateStream();
 
     try {
-      print("🔄 Loading timetable for: $department, $semester");
+      print("Loading timetable for: $department, $semester");
 
       // Check holiday
       _isHoliday = await _firestoreService.isHoliday();
@@ -62,25 +74,173 @@ class TimetableProvider with ChangeNotifier {
         _todayClasses = [];
         _isLoading = false;
         notifyListeners();
-        _updateStream(); // Update stream
+        _updateStream();
+        // Cache holiday status
+        await _saveToCache();
         return;
       }
 
       // Get today's classes
       _todayClasses = await _firestoreService.getTodayClasses(department, semester);
 
-      print("✅ Loaded ${_todayClasses.length} classes for today");
+      print(" Loaded ${_todayClasses.length} classes for today");
+
+      // Schedule notifications for today's classes
+      if (_todayClasses.isNotEmpty) {
+        _scheduleNotificationsForToday();
+      }
+
+      // Cache the data
+      await _saveToCache();
+
       _isLoading = false;
       notifyListeners();
-      _updateStream(); // Update stream
+      _updateStream();
 
     } catch (e) {
       print("❌ Error loading timetable: $e");
-      _errorMessage = "Failed to load timetable: $e";
-      _todayClasses = [];
+
+      // Firebase ব্যর্থ হলে cache থেকে load করুন
+      final cachedLoaded = await loadCachedTimetable();
+      if (!cachedLoaded) {
+        _errorMessage = "Failed to load timetable: $e";
+        _todayClasses = [];
+      }
+
       _isLoading = false;
       notifyListeners();
-      _updateStream(); // Update stream
+      _updateStream();
+    }
+  }
+
+  // ✅ NEW: Load cached timetable data (offline mode)
+  Future<bool> loadCachedTimetable() async {
+    try {
+      print('🔄 Loading timetable from cache...');
+      final prefs = await SharedPreferences.getInstance();
+
+      // Check if cache exists and is not too old (24 hours)
+      final cachedTimestamp = prefs.getInt(_cachedTimestampKey);
+      if (cachedTimestamp != null) {
+        final cacheAge = DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(cachedTimestamp));
+        if (cacheAge.inHours > 24) {
+          print('⚠️ Cache is too old (${cacheAge.inHours} hours), ignoring');
+          return false;
+        }
+      }
+
+      final cachedTodayClassesJson = prefs.getString(_cachedTodayClassesKey);
+      final cachedWeeklyClassesJson = prefs.getString(_cachedWeeklyClassesKey);
+      final cachedHoliday = prefs.getBool(_cachedHolidayKey);
+      final cachedDept = prefs.getString(_cachedDepartmentKey);
+      final cachedSem = prefs.getString(_cachedSemesterKey);
+
+      if (cachedTodayClassesJson != null && cachedTodayClassesJson.isNotEmpty) {
+        try {
+          // Decode today's classes
+          final List<dynamic> todayJsonList = jsonDecode(cachedTodayClassesJson);
+          _todayClasses = todayJsonList.map((json) => ClassPeriod.fromJson(json)).toList();
+
+          // Decode weekly classes
+          if (cachedWeeklyClassesJson != null && cachedWeeklyClassesJson.isNotEmpty) {
+            final Map<String, dynamic> weeklyJsonMap = jsonDecode(cachedWeeklyClassesJson);
+            _weeklyClasses = {};
+            weeklyJsonMap.forEach((day, classesJson) {
+              if (classesJson is List) {
+                _weeklyClasses[day] = classesJson.map((json) => ClassPeriod.fromJson(json)).toList();
+              }
+            });
+          }
+
+          // Set other cached values
+          _isHoliday = cachedHoliday ?? false;
+          _currentDepartment = cachedDept;
+          _currentSemester = cachedSem;
+
+          print('✅ Cached timetable loaded: ${_todayClasses.length} today classes');
+          return true;
+        } catch (parseError) {
+          print('❌ Error parsing cached timetable JSON: $parseError');
+          // Corrupted cache ডিলিট করুন
+          await _clearCache();
+          return false;
+        }
+      } else {
+        print('⚠️ No cached timetable data found');
+        return false;
+      }
+    } catch (e) {
+      print('❌ Error loading cached timetable: $e');
+      return false;
+    }
+  }
+
+  // ✅ NEW: Save data to cache
+  Future<void> _saveToCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // Encode today's classes
+      final todayJsonList = _todayClasses.map((classPeriod) => classPeriod.toJson()).toList();
+      await prefs.setString(_cachedTodayClassesKey, jsonEncode(todayJsonList));
+
+      // Encode weekly classes
+      final weeklyJsonMap = {};
+      _weeklyClasses.forEach((day, classes) {
+        weeklyJsonMap[day] = classes.map((classPeriod) => classPeriod.toJson()).toList();
+      });
+      await prefs.setString(_cachedWeeklyClassesKey, jsonEncode(weeklyJsonMap));
+
+      // Save other data
+      await prefs.setBool(_cachedHolidayKey, _isHoliday);
+      await prefs.setString(_cachedDepartmentKey, _currentDepartment ?? '');
+      await prefs.setString(_cachedSemesterKey, _currentSemester ?? '');
+      await prefs.setInt(_cachedTimestampKey, DateTime.now().millisecondsSinceEpoch);
+
+      print('💾 Timetable saved to cache');
+    } catch (e) {
+      print('❌ Error saving timetable to cache: $e');
+    }
+  }
+
+  // ✅ NEW: Clear cache
+  Future<void> _clearCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_cachedTodayClassesKey);
+      await prefs.remove(_cachedWeeklyClassesKey);
+      await prefs.remove(_cachedHolidayKey);
+      await prefs.remove(_cachedDepartmentKey);
+      await prefs.remove(_cachedSemesterKey);
+      await prefs.remove(_cachedTimestampKey);
+      print('🗑️ Timetable cache cleared');
+    } catch (e) {
+      print('❌ Error clearing timetable cache: $e');
+    }
+  }
+
+  // ✅ NEW: Check if cache exists
+  Future<bool> hasCachedData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedTodayClassesJson = prefs.getString(_cachedTodayClassesKey);
+      return cachedTodayClassesJson != null && cachedTodayClassesJson.isNotEmpty;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Schedule notifications for today's classes
+  void _scheduleNotificationsForToday() async {
+    try {
+      // Initialize notification service
+      await ClassNotificationService().initialize();
+
+      // Schedule notifications
+      await ClassNotificationService().checkAndScheduleNotifications(_todayClasses);
+      print('🎯 Notifications scheduled for ${_todayClasses.length} classes');
+    } catch (e) {
+      print('⚠️ Error scheduling notifications: $e');
     }
   }
 
@@ -91,7 +251,7 @@ class TimetableProvider with ChangeNotifier {
     _currentDepartment = department;
     _currentSemester = semester;
     notifyListeners();
-    _updateStream(); // Update stream
+    _updateStream();
 
     try {
       print("🔄 Loading WEEKLY timetable for: $department, $semester");
@@ -103,7 +263,7 @@ class TimetableProvider with ChangeNotifier {
         _weeklyClasses = {};
         _isWeeklyLoading = false;
         notifyListeners();
-        _updateStream(); // Update stream
+        _updateStream();
         return;
       }
 
@@ -116,9 +276,12 @@ class TimetableProvider with ChangeNotifier {
         print("  $day: ${classes.length} classes");
       });
 
+      // Cache the data
+      await _saveToCache();
+
       _isWeeklyLoading = false;
       notifyListeners();
-      _updateStream(); // Update stream
+      _updateStream();
 
     } catch (e) {
       print("❌ Error loading weekly timetable: $e");
@@ -126,7 +289,7 @@ class TimetableProvider with ChangeNotifier {
       _weeklyClasses = {};
       _isWeeklyLoading = false;
       notifyListeners();
-      _updateStream(); // Update stream
+      _updateStream();
     }
   }
 
@@ -180,7 +343,7 @@ class TimetableProvider with ChangeNotifier {
     _isHoliday = false;
     _errorMessage = null;
     notifyListeners();
-    _updateStream(); // Update stream
+    _updateStream();
   }
 
   // ✅ Get group key for debugging (নতুন method)

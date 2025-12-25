@@ -1,9 +1,10 @@
 import 'dart:io';
+import 'package:amar_institute/services/api.dart';
 import 'package:dio/dio.dart';
 import 'package:path/path.dart' as path;
 
 class ImageBBService {
-  static const String apiKey = '6f0ead1d22839466563ab662627b87b6';
+
   static const String uploadUrl = 'https://api.imgbb.com/1/upload';
   final Dio _dio = Dio();
 
@@ -11,7 +12,7 @@ class ImageBBService {
     try {
       final fileName = path.basename(imageFile.path);
       final formData = FormData.fromMap({
-        'key': apiKey,
+        'key': Apis.imagebb,
         'image': await MultipartFile.fromFile(
           imageFile.path,
           filename: fileName,

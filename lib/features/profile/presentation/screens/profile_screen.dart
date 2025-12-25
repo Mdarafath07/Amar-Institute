@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../app/app_colors.dart';
+import '../../../../app/assets_path.dart';
 import '../../../../providers/auth_provider.dart';
 import '../../../../providers/user_provider.dart';
 import '../../../../providers/theme_provider.dart';
@@ -331,20 +333,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 CircleAvatar(
                   radius: 40,
-                  backgroundColor: AppColors.themeColor,
-                  backgroundImage: user?.profileImageUrl != null
-                      ? NetworkImage(user!.profileImageUrl!)
-                      : null,
-                  child: _isUploading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : user?.profileImageUrl == null
-                      ? const Icon(
-                    Icons.person,
-                    size: 40,
-                    color: Colors.white,
-                  )
-                      : null,
+                  backgroundColor: AppColors.themeColor.withOpacity(0.1),
+                  child: ClipOval(
+                    child: _isUploading
+                        ? CircularProgressIndicator(color: AppColors.themeColor)
+                        : user?.profileImageUrl != null && user!.profileImageUrl!.isNotEmpty
+                        ? CachedNetworkImage(
+                      imageUrl: user!.profileImageUrl!,
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
+                      // ✅ ইমেজ লোড হওয়ার সময় যা দেখাবে
+                      placeholder: (context, url) => const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      // ✅ অফলাইনে থাকলে বা এরর হলে ক্যাশ থেকে ছবি দেখাবে,
+                      // ছবি না থাকলে প্লেসহোল্ডার দেখাবে
+                      errorWidget: (context, url, error) => Image.asset(
+                        AssetsPath.placeholder, // আপনার প্লেসহোল্ডার ইমেজের পাথ
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                        : 
+                    Image.asset(AssetsPath.placeholder)
+                  ),
                 ),
+                // ক্যামেরা আইকন অংশ (আগের মতোই থাকবে)
                 Positioned(
                   bottom: 0,
                   right: 0,
