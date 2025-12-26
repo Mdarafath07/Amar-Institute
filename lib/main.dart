@@ -81,22 +81,19 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     print('BACKGROUND HANDLER: Notification created successfully from background');
 
   } catch (e, stackTrace) {
-    print('❌ BACKGROUND HANDLER ERROR: $e');
+    print('BACKGROUND HANDLER ERROR: $e');
     print('Stack trace: $stackTrace');
   }
 }
 
 Future<void> main() async {
-  // ১. বাইন্ডিং নিশ্চিত করা
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
     tz.initializeTimeZones();
 
-    // ২. ফায়ারবেস ৫ সেকেন্ডের টাইমআউট সহ
     await Firebase.initializeApp().timeout(const Duration(seconds: 5));
 
-    // ৩. নোটিফিকেশন সার্ভিসকে নন-ব্লকিং করা ( await সরিয়ে দেওয়া হয়েছে )
     ClassNotificationService().initialize().catchError((e) {
       debugPrint("Notification Initialization Error: $e");
     });
@@ -107,18 +104,16 @@ Future<void> main() async {
       FirebaseMessagingService().handleForegroundMessage(message);
     });
 
-    // ৪. পারমিশন চেক
     AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
       if (!isAllowed) {
         AwesomeNotifications().requestPermissionToSendNotifications();
       }
     });
 
-    debugPrint('🚀 App initialization triggered successfully');
+    debugPrint(' App initialization triggered successfully');
   } catch (e) {
-    debugPrint('❌ Initialization Error: $e');
+    debugPrint(' Initialization Error: $e');
   }
 
-  // ৫. যে কোনো পরিস্থিতিতে runApp কল হবেই
   runApp(const AmarInstitute());
 }

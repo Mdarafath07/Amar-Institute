@@ -4,7 +4,6 @@ import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
-import 'package:timezone/data/latest_all.dart' as tz;
 
 import '../models/timetable_model.dart';
 import 'firebase_messaging_service.dart';
@@ -31,13 +30,12 @@ class ClassNotificationService {
     };
   }
 
-  //  Make fallback initialization public
   Future<void> initializeFallback() async {
     try {
       print('Trying fallback initialization...');
 
       await AwesomeNotifications().initialize(
-        null,
+        'resource://drawable/amarinstitute',
         [
           NotificationChannel(
             channelKey: 'class_reminders',
@@ -65,11 +63,9 @@ class ClassNotificationService {
     try {
       print(' Starting notification service initialization...');
 
-      // Step 1: Initialize Firebase Messaging FIRST
       print('Initializing Firebase Messaging...');
       await fcmService.initialize();
 
-      // Debug FCM status
       await fcmService.debugFCMStatus();
 
       print(' Initializing Awesome Notifications...');
@@ -256,9 +252,10 @@ class ClassNotificationService {
       final now = tz.TZDateTime.now(tz.local);
       bool hasScheduled = false;
 
-      // reminder befor 2 hour ago
       if (isFirstClass) {
         final twoHoursBefore = startTime.subtract(const Duration(hours: 2));
+
+
         if (twoHoursBefore.isAfter(now)) {
           await _scheduleSingleNotification(
             id: _generateNotificationId(classPeriod, 1),
@@ -269,11 +266,10 @@ class ClassNotificationService {
             type: '2_hour_reminder',
           );
           hasScheduled = true;
-          print(' Scheduled 2-hour reminder for first class: ${classPeriod.courseCode} at ${classPeriod.startTime}');
+          debugPrint('Scheduled 2-hour reminder for: ${classPeriod.courseCode}');
         }
       }
 
-      // reminder brfor 5 minutes ago
       final fiveMinutesBefore = startTime.subtract(const Duration(minutes: 5));
       if (fiveMinutesBefore.isAfter(now)) {
         await _scheduleSingleNotification(
@@ -285,7 +281,6 @@ class ClassNotificationService {
           type: '5_min_reminder',
         );
         hasScheduled = true;
-        print('Scheduled 5-minute reminder for: ${classPeriod.courseCode} at ${classPeriod.startTime}');
       }
 
       if (startTime.isAfter(now)) {
@@ -302,7 +297,7 @@ class ClassNotificationService {
 
       return hasScheduled;
     } catch (e) {
-      print(' Error scheduling reminders for ${classPeriod.courseCode}: $e');
+      debugPrint('❌ Error: $e');
       return false;
     }
   }
@@ -411,47 +406,22 @@ class ClassNotificationService {
     try {
       final now = tz.TZDateTime.now(tz.local);
       final cleanedTime = timeStr.trim().toUpperCase();
+      final RegExp timeRegExp = RegExp(r'(\d{1,2}):(\d{2})\s*(AM|PM)?');
+      final match = timeRegExp.firstMatch(cleanedTime);
 
-      debugPrint('🕒 Parsing time: $timeStr, Current time: $now');
+      if (match == null) return null;
 
-      List<String> parts;
-      if (cleanedTime.contains('AM') || cleanedTime.contains('PM')) {
-        parts = cleanedTime.split(' ');
-      } else {
-        parts = [cleanedTime, ''];
-      }
+      int hour = int.parse(match.group(1)!);
+      int minute = int.parse(match.group(2)!);
+      String? period = match.group(3);
 
-      final timePart = parts[0];
-      final period = parts.length > 1 ? parts[1] : '';
-
-      final hourMinute = timePart.split(':');
-      int hour = int.parse(hourMinute[0].trim());
-      int minute = int.parse(hourMinute[1].trim());
-
-      // 12-hour to 24-hour conversion
       if (period == 'PM' && hour != 12) hour += 12;
       if (period == 'AM' && hour == 12) hour = 0;
 
-      final scheduledTime = tz.TZDateTime(
-        tz.local,
-        now.year,
-        now.month,
-        now.day,
-        hour,
-        minute,
-      );
+      final scheduledTime = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
 
-
-      if (scheduledTime.isBefore(now)) {
-        debugPrint('Time $timeStr has passed. Setting for tomorrow...');
-        return scheduledTime.add(const Duration(days: 1));
-      }
-
-      debugPrint('Parsed time successfully: $scheduledTime');
-      return scheduledTime;
-
+      return scheduledTime.isBefore(now) ? scheduledTime.add(const Duration(days: 1)) : scheduledTime;
     } catch (e) {
-      debugPrint('Error parsing time "$timeStr": $e');
       return null;
     }
   }
