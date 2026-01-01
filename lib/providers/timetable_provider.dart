@@ -29,7 +29,7 @@ class TimetableProvider with ChangeNotifier {
 
   // Stream Controller for real-time updates
   final StreamController<Map<String, dynamic>> _timetableStreamController =
-  StreamController<Map<String, dynamic>>.broadcast();
+      StreamController<Map<String, dynamic>>.broadcast();
 
   List<ClassPeriod> get todayClasses => _todayClasses;
   Map<String, List<ClassPeriod>> get weeklyClasses => _weeklyClasses;
@@ -39,11 +39,13 @@ class TimetableProvider with ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   // Getter for stream
-  Stream<Map<String, dynamic>> get timetableStream => _timetableStreamController.stream;
+  Stream<Map<String, dynamic>> get timetableStream =>
+      _timetableStreamController.stream;
 
   // Method to update stream
   void _updateStream() {
-    if (!_timetableStreamController.isClosed && _timetableStreamController.hasListener) {
+    if (!_timetableStreamController.isClosed &&
+        _timetableStreamController.hasListener) {
       _timetableStreamController.add({
         'weeklyClasses': Map<String, List<ClassPeriod>>.from(_weeklyClasses),
         'todayClasses': List<ClassPeriod>.from(_todayClasses),
@@ -70,7 +72,7 @@ class TimetableProvider with ChangeNotifier {
       // Check holiday
       _isHoliday = await _firestoreService.isHoliday();
       if (_isHoliday) {
-        print("🎉 It's a holiday!");
+        print(" It's a holiday!");
         _todayClasses = [];
         _isLoading = false;
         notifyListeners();
@@ -81,7 +83,8 @@ class TimetableProvider with ChangeNotifier {
       }
 
       // Get today's classes
-      _todayClasses = await _firestoreService.getTodayClasses(department, semester);
+      _todayClasses =
+          await _firestoreService.getTodayClasses(department, semester);
 
       print(" Loaded ${_todayClasses.length} classes for today");
 
@@ -96,11 +99,9 @@ class TimetableProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       _updateStream();
-
     } catch (e) {
-      print("❌ Error loading timetable: $e");
+      print(" Error loading timetable: $e");
 
-      // Firebase ব্যর্থ হলে cache থেকে load করুন
       final cachedLoaded = await loadCachedTimetable();
       if (!cachedLoaded) {
         _errorMessage = "Failed to load timetable: $e";
@@ -113,18 +114,17 @@ class TimetableProvider with ChangeNotifier {
     }
   }
 
-  // ✅ NEW: Load cached timetable data (offline mode)
   Future<bool> loadCachedTimetable() async {
     try {
-      print('🔄 Loading timetable from cache...');
+      print(' Loading timetable from cache...');
       final prefs = await SharedPreferences.getInstance();
 
-      // Check if cache exists and is not too old (24 hours)
       final cachedTimestamp = prefs.getInt(_cachedTimestampKey);
       if (cachedTimestamp != null) {
-        final cacheAge = DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(cachedTimestamp));
+        final cacheAge = DateTime.now()
+            .difference(DateTime.fromMillisecondsSinceEpoch(cachedTimestamp));
         if (cacheAge.inHours > 24) {
-          print('⚠️ Cache is too old (${cacheAge.inHours} hours), ignoring');
+          print(' Cache is too old (${cacheAge.inHours} hours), ignoring');
           return false;
         }
       }
@@ -137,17 +137,22 @@ class TimetableProvider with ChangeNotifier {
 
       if (cachedTodayClassesJson != null && cachedTodayClassesJson.isNotEmpty) {
         try {
-          // Decode today's classes
-          final List<dynamic> todayJsonList = jsonDecode(cachedTodayClassesJson);
-          _todayClasses = todayJsonList.map((json) => ClassPeriod.fromJson(json)).toList();
+          final List<dynamic> todayJsonList =
+              jsonDecode(cachedTodayClassesJson);
+          _todayClasses =
+              todayJsonList.map((json) => ClassPeriod.fromJson(json)).toList();
 
           // Decode weekly classes
-          if (cachedWeeklyClassesJson != null && cachedWeeklyClassesJson.isNotEmpty) {
-            final Map<String, dynamic> weeklyJsonMap = jsonDecode(cachedWeeklyClassesJson);
+          if (cachedWeeklyClassesJson != null &&
+              cachedWeeklyClassesJson.isNotEmpty) {
+            final Map<String, dynamic> weeklyJsonMap =
+                jsonDecode(cachedWeeklyClassesJson);
             _weeklyClasses = {};
             weeklyJsonMap.forEach((day, classesJson) {
               if (classesJson is List) {
-                _weeklyClasses[day] = classesJson.map((json) => ClassPeriod.fromJson(json)).toList();
+                _weeklyClasses[day] = classesJson
+                    .map((json) => ClassPeriod.fromJson(json))
+                    .toList();
               }
             });
           }
@@ -157,11 +162,11 @@ class TimetableProvider with ChangeNotifier {
           _currentDepartment = cachedDept;
           _currentSemester = cachedSem;
 
-          print('✅ Cached timetable loaded: ${_todayClasses.length} today classes');
+          print(
+              ' Cached timetable loaded: ${_todayClasses.length} today classes');
           return true;
         } catch (parseError) {
-          print('❌ Error parsing cached timetable JSON: $parseError');
-          // Corrupted cache ডিলিট করুন
+          print(' Error parsing cached timetable JSON: $parseError');
           await _clearCache();
           return false;
         }
@@ -170,7 +175,7 @@ class TimetableProvider with ChangeNotifier {
         return false;
       }
     } catch (e) {
-      print('❌ Error loading cached timetable: $e');
+      print(' Error loading cached timetable: $e');
       return false;
     }
   }
@@ -181,13 +186,15 @@ class TimetableProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
 
       // Encode today's classes
-      final todayJsonList = _todayClasses.map((classPeriod) => classPeriod.toJson()).toList();
+      final todayJsonList =
+          _todayClasses.map((classPeriod) => classPeriod.toJson()).toList();
       await prefs.setString(_cachedTodayClassesKey, jsonEncode(todayJsonList));
 
       // Encode weekly classes
       final weeklyJsonMap = {};
       _weeklyClasses.forEach((day, classes) {
-        weeklyJsonMap[day] = classes.map((classPeriod) => classPeriod.toJson()).toList();
+        weeklyJsonMap[day] =
+            classes.map((classPeriod) => classPeriod.toJson()).toList();
       });
       await prefs.setString(_cachedWeeklyClassesKey, jsonEncode(weeklyJsonMap));
 
@@ -195,7 +202,8 @@ class TimetableProvider with ChangeNotifier {
       await prefs.setBool(_cachedHolidayKey, _isHoliday);
       await prefs.setString(_cachedDepartmentKey, _currentDepartment ?? '');
       await prefs.setString(_cachedSemesterKey, _currentSemester ?? '');
-      await prefs.setInt(_cachedTimestampKey, DateTime.now().millisecondsSinceEpoch);
+      await prefs.setInt(
+          _cachedTimestampKey, DateTime.now().millisecondsSinceEpoch);
 
       print('💾 Timetable saved to cache');
     } catch (e) {
@@ -224,7 +232,8 @@ class TimetableProvider with ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final cachedTodayClassesJson = prefs.getString(_cachedTodayClassesKey);
-      return cachedTodayClassesJson != null && cachedTodayClassesJson.isNotEmpty;
+      return cachedTodayClassesJson != null &&
+          cachedTodayClassesJson.isNotEmpty;
     } catch (e) {
       return false;
     }
@@ -237,7 +246,8 @@ class TimetableProvider with ChangeNotifier {
       await ClassNotificationService().initialize();
 
       // Schedule notifications
-      await ClassNotificationService().checkAndScheduleNotifications(_todayClasses);
+      await ClassNotificationService()
+          .checkAndScheduleNotifications(_todayClasses);
       print('🎯 Notifications scheduled for ${_todayClasses.length} classes');
     } catch (e) {
       print('⚠️ Error scheduling notifications: $e');
@@ -268,7 +278,8 @@ class TimetableProvider with ChangeNotifier {
       }
 
       // Get weekly timetable
-      _weeklyClasses = await _firestoreService.getWeeklyTimetable(department, semester);
+      _weeklyClasses =
+          await _firestoreService.getWeeklyTimetable(department, semester);
 
       // Print summary
       print("📊 Weekly timetable summary:");
@@ -282,7 +293,6 @@ class TimetableProvider with ChangeNotifier {
       _isWeeklyLoading = false;
       notifyListeners();
       _updateStream();
-
     } catch (e) {
       print("❌ Error loading weekly timetable: $e");
       _errorMessage = "Failed to load weekly timetable: $e";
@@ -304,7 +314,9 @@ class TimetableProvider with ChangeNotifier {
   // Get running classes for specific day
   List<ClassPeriod> getRunningClassesForDay(String day) {
     final classes = getClassesForDay(day);
-    return classes.where((classPeriod) => classPeriod.isCurrentlyRunning).toList();
+    return classes
+        .where((classPeriod) => classPeriod.isCurrentlyRunning)
+        .toList();
   }
 
   // Get upcoming classes for specific day
@@ -351,20 +363,29 @@ class TimetableProvider with ChangeNotifier {
     String dept = department.trim().toUpperCase();
 
     // Department mapping
-    if (dept.contains('COMPUTER') || dept.contains('CST')) dept = 'CST';
-    else if (dept.contains('ELECTRONICS')) dept = 'ET';
-    else if (dept.contains('CIVIL')) dept = 'Civil';
-    else if (dept.contains('ELECTRICAL')) dept = 'ET';
-    else if (dept.contains('MECHANICAL')) dept = 'ME';
+    if (dept.contains('COMPUTER') || dept.contains('CST'))
+      dept = 'CST';
+    else if (dept.contains('ELECTRONICS'))
+      dept = 'ET';
+    else if (dept.contains('CIVIL'))
+      dept = 'Civil';
+    else if (dept.contains('ELECTRICAL'))
+      dept = 'ET';
+    else if (dept.contains('MECHANICAL'))
+      dept = 'ME';
     else if (dept.contains('ARCHITECTURE')) dept = 'ARCH';
 
     // Semester formatting
     String sem = semester.trim().toLowerCase();
     if (!sem.contains(RegExp(r'(st|nd|rd|th)'))) {
-      if (sem == '1') sem = '1st';
-      else if (sem == '2') sem = '2nd';
-      else if (sem == '3') sem = '3rd';
-      else sem = '${sem}th';
+      if (sem == '1')
+        sem = '1st';
+      else if (sem == '2')
+        sem = '2nd';
+      else if (sem == '3')
+        sem = '3rd';
+      else
+        sem = '${sem}th';
     } else {
       sem = semester.trim();
     }

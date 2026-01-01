@@ -44,7 +44,6 @@ class AuthProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       _isOfflineMode = prefs.getBool('is_online') == false;
 
-      // প্রথমে ক্যাশ থেকে লোড করার চেষ্টা করুন
       final cachedUserJson = prefs.getString('cached_user');
       if (cachedUserJson != null && cachedUserJson.isNotEmpty) {
         try {
@@ -53,12 +52,11 @@ class AuthProvider with ChangeNotifier {
           _isLoading = false;
           notifyListeners();
         } catch (e) {
-          print('❌ Error parsing cached user JSON: $e');
+          print(' Error parsing cached user JSON: $e');
           await prefs.remove('cached_user');
         }
       }
 
-      // Firebase থেকে লোড করার চেষ্টা করুন (যদি offline mode না হয়)
       if (!_isOfflineMode) {
         try {
           final firebaseUser = _authService.currentUser;
@@ -67,23 +65,21 @@ class AuthProvider with ChangeNotifier {
             final freshUser = await firestoreService.getUser(firebaseUser.uid);
             if (freshUser != null) {
               _user = freshUser;
-              // নতুন ডেটা ক্যাশে সেভ করুন
               await prefs.setString('cached_user', jsonEncode(freshUser.toJson()));
               await prefs.setBool('is_online', true);
             }
           }
         } catch (e) {
-          print('⚠️ Firebase user load failed (offline mode active): $e');
+          print('Firebase user load failed (offline mode active): $e');
           _isOfflineMode = true;
           await prefs.setBool('is_online', false);
 
-          // যদি Firebase ব্যর্থ হয় এবং ক্যাশে কোনো ডেটা না থাকে
           if (_user == null && cachedUserJson != null && cachedUserJson.isNotEmpty) {
             try {
               final Map<String, dynamic> userMap = jsonDecode(cachedUserJson);
               _user = UserModel.fromJson(userMap);
             } catch (e) {
-              print('❌ Error loading from cache after Firebase failure: $e');
+              print('Error loading from cache after Firebase failure: $e');
             }
           }
         }
@@ -92,7 +88,7 @@ class AuthProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     } catch (e) {
-      print('❌ Error in loadUser(): $e');
+      print('Error in loadUser(): $e');
       _isLoading = false;
       notifyListeners();
     }
@@ -108,7 +104,7 @@ class AuthProvider with ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print('❌ Error loading cached user: $e');
+      print(' Error loading cached user: $e');
     }
   }
 
@@ -140,7 +136,6 @@ class AuthProvider with ChangeNotifier {
         phoneNumber: phoneNumber,
       );
 
-      // ক্যাশে সেভ করুন
       if (_user != null) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('cached_user', jsonEncode(_user!.toJson()));
@@ -191,7 +186,6 @@ class AuthProvider with ChangeNotifier {
         password: password,
       );
 
-      // ক্যাশে সেভ করুন
       if (_user != null) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('cached_user', jsonEncode(_user!.toJson()));

@@ -9,7 +9,8 @@ import '../models/timetable_model.dart';
 import 'firebase_messaging_service.dart';
 
 class ClassNotificationService {
-  static final ClassNotificationService _instance = ClassNotificationService._internal();
+  static final ClassNotificationService _instance =
+      ClassNotificationService._internal();
   factory ClassNotificationService() => _instance;
   ClassNotificationService._internal();
 
@@ -18,7 +19,8 @@ class ClassNotificationService {
   final FirebaseMessagingService fcmService = FirebaseMessagingService();
 
   // Convert ClassPeriod to payload
-  Map<String, String> _classPeriodToPayload(ClassPeriod classPeriod, String type) {
+  Map<String, String> _classPeriodToPayload(
+      ClassPeriod classPeriod, String type) {
     return {
       'type': type,
       'class_id': classPeriod.courseCode,
@@ -51,9 +53,9 @@ class ClassNotificationService {
       );
 
       _isInitialized = true;
-      print('✅ Notification service initialized (fallback mode)');
+      print(' Notification service initialized (fallback mode)');
     } catch (e) {
-      print('❌ Fallback initialization also failed: $e');
+      print(' Fallback initialization also failed: $e');
     }
   }
 
@@ -125,8 +127,8 @@ class ClassNotificationService {
       await fcmService.subscribeToTopic('class_updates');
 
       _isInitialized = true;
-      print(' Notification service initialized successfully with critical alerts');
-
+      print(
+          ' Notification service initialized successfully with critical alerts');
     } catch (e, stackTrace) {
       print('❌ Error initializing notification service: $e');
       print('Stack trace: $stackTrace');
@@ -144,7 +146,8 @@ class ClassNotificationService {
           id: 8888,
           channelKey: 'class_reminders',
           title: 'Test Notification',
-          body: 'This is a test notification to verify background/foreground handling',
+          body:
+              'This is a test notification to verify background/foreground handling',
           wakeUpScreen: true,
           fullScreenIntent: true,
           criticalAlert: true,
@@ -162,7 +165,6 @@ class ClassNotificationService {
       print(' Error sending test notification: $e');
     }
   }
-
 
   Future<void> _scheduleSingleNotification({
     required int id,
@@ -209,9 +211,11 @@ class ClassNotificationService {
     }
   }
 
-  Future<void> checkAndScheduleNotifications(List<ClassPeriod> todayClasses) async {
+  Future<void> checkAndScheduleNotifications(
+      List<ClassPeriod> todayClasses) async {
     try {
-      print('🔔 Checking and scheduling notifications for ${todayClasses.length} classes...');
+      print(
+          '🔔 Checking and scheduling notifications for ${todayClasses.length} classes...');
 
       await _clearOldNotifications();
 
@@ -228,14 +232,16 @@ class ClassNotificationService {
     }
   }
 
-  Future<void> scheduleClassNotifications(List<ClassPeriod> todayClasses) async {
+  Future<void> scheduleClassNotifications(
+      List<ClassPeriod> todayClasses) async {
     print('Scheduling notifications for ${todayClasses.length} classes');
 
     int scheduledCount = 0;
 
     for (int i = 0; i < todayClasses.length; i++) {
       final classPeriod = todayClasses[i];
-      final scheduled = await _scheduleClassReminders(classPeriod, isFirstClass: i == 0);
+      final scheduled =
+          await _scheduleClassReminders(classPeriod, isFirstClass: i == 0);
       if (scheduled) scheduledCount++;
     }
 
@@ -244,7 +250,8 @@ class ClassNotificationService {
     }
   }
 
-  Future<bool> _scheduleClassReminders(ClassPeriod classPeriod, {bool isFirstClass = false}) async {
+  Future<bool> _scheduleClassReminders(ClassPeriod classPeriod,
+      {bool isFirstClass = false}) async {
     try {
       final startTime = _parseTimeString(classPeriod.startTime);
       if (startTime == null) return false;
@@ -254,7 +261,6 @@ class ClassNotificationService {
 
       if (isFirstClass) {
         final twoHoursBefore = startTime.subtract(const Duration(hours: 2));
-
 
         if (twoHoursBefore.isAfter(now)) {
           await _scheduleSingleNotification(
@@ -266,7 +272,8 @@ class ClassNotificationService {
             type: '2_hour_reminder',
           );
           hasScheduled = true;
-          debugPrint('Scheduled 2-hour reminder for: ${classPeriod.courseCode}');
+          debugPrint(
+              'Scheduled 2-hour reminder for: ${classPeriod.courseCode}');
         }
       }
 
@@ -301,12 +308,46 @@ class ClassNotificationService {
       return false;
     }
   }
+  // notification_service.dart ফাইলে ClassNotificationService ক্লাসের ভিতরে এই মেথড যোগ করুন
+
+  Future<void> sendNoticeNotification({
+    required String title,
+    required String body,
+    Map<String, String>? payload,
+  }) async {
+    try {
+      print('📨 Showing notice notification...');
+
+      int notificationId =
+          DateTime.now().millisecondsSinceEpoch.remainder(100000);
+
+      await AwesomeNotifications().createNotification(
+        content: NotificationContent(
+          id: notificationId,
+          channelKey: 'general_notifications',
+          title: title,
+          body: body,
+          notificationLayout: NotificationLayout.BigText,
+          payload: payload ?? {},
+          wakeUpScreen: true,
+          fullScreenIntent: true,
+          autoDismissible: false,
+          displayOnBackground: true,
+          displayOnForeground: true,
+          category: NotificationCategory.Message,
+        ),
+      );
+
+      print('✅ Notice notification shown');
+    } catch (e) {
+      print('❌ Error showing notice notification: $e');
+    }
+  }
 
   int _generateNotificationId(ClassPeriod classPeriod, int type) {
     return classPeriod.period * 1000 + type;
   }
 
-  // Cute টাইটেল জেনারেটর
   String _getTwoHourTitle(String courseCode) {
     final titles = [
       ' First Class Alert!',
@@ -340,8 +381,8 @@ class ClassNotificationService {
     return titles[DateTime.now().millisecond % titles.length];
   }
 
-  // Cute মেসেজ জেনারেটর
-  String _getTwoHourMessage(ClassPeriod classPeriod, {bool isFirstClass = false}) {
+  String _getTwoHourMessage(ClassPeriod classPeriod,
+      {bool isFirstClass = false}) {
     final prefix = isFirstClass ? "Today's first class" : "Class";
     final messages = [
       ' $prefix ${classPeriod.courseCode} starts in 2 hours!\n📍 Room: ${classPeriod.room}\n⏰ Time: ${classPeriod.startTime}\n\n👨‍🏫 Teacher: ${classPeriod.instructor}\n\nGet your notes ready! ',
@@ -371,11 +412,11 @@ class ClassNotificationService {
     return messages[DateTime.now().second % messages.length];
   }
 
-
   Future<void> _clearOldNotifications() async {
     try {
       final now = DateTime.now();
-      final scheduledNotifications = await AwesomeNotifications().listScheduledNotifications();
+      final scheduledNotifications =
+          await AwesomeNotifications().listScheduledNotifications();
 
       for (final notification in scheduledNotifications) {
         final schedule = notification.schedule;
@@ -388,10 +429,10 @@ class ClassNotificationService {
             schedule.minute ?? 0,
           );
 
-
           if (scheduledDate.isBefore(now.subtract(Duration(hours: 1)))) {
             await AwesomeNotifications().cancel(notification.content?.id ?? 0);
-            debugPrint('Deleted old notification: ${notification.content?.title}');
+            debugPrint(
+                'Deleted old notification: ${notification.content?.title}');
           }
         }
       }
@@ -418,21 +459,21 @@ class ClassNotificationService {
       if (period == 'PM' && hour != 12) hour += 12;
       if (period == 'AM' && hour == 12) hour = 0;
 
-      final scheduledTime = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
+      final scheduledTime =
+          tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
 
-      return scheduledTime.isBefore(now) ? scheduledTime.add(const Duration(days: 1)) : scheduledTime;
+      return scheduledTime.isBefore(now)
+          ? scheduledTime.add(const Duration(days: 1))
+          : scheduledTime;
     } catch (e) {
       return null;
     }
   }
 
-
-
   Future<void> cancelAllNotifications() async {
     await AwesomeNotifications().cancelAll();
     print('All notifications cancelled');
   }
-
 
   Future<void> toggleNotifications(bool enabled) async {
     final prefs = await SharedPreferences.getInstance();
@@ -450,7 +491,8 @@ class ClassNotificationService {
 
   Future<List<Map<String, dynamic>>> getScheduledNotifications() async {
     try {
-      final notifications = await AwesomeNotifications().listScheduledNotifications();
+      final notifications =
+          await AwesomeNotifications().listScheduledNotifications();
       return notifications.map((notification) {
         final content = notification.content;
         final schedule = notification.schedule;
@@ -477,9 +519,8 @@ class ClassNotificationService {
     }
   }
 
-
   void cacheClasses(List<ClassPeriod> classes) {
-    print('💾 Caching ${classes.length} classes for notifications');
+    print(' Caching ${classes.length} classes for notifications');
   }
 
   Future<String?> getFCMToken() async {
@@ -491,7 +532,6 @@ class ClassNotificationService {
     }
   }
 
-
   Future<void> testFCMNotification() async {
     try {
       print('Testing FCM notification with full screen intent...');
@@ -501,7 +541,8 @@ class ClassNotificationService {
           id: 7777,
           channelKey: 'class_reminders',
           title: 'Test Full Screen Notification',
-          body: 'This is a test notification to check full screen intent and wake up screen functionality',
+          body:
+              'This is a test notification to check full screen intent and wake up screen functionality',
           wakeUpScreen: true,
           fullScreenIntent: true,
           criticalAlert: true,

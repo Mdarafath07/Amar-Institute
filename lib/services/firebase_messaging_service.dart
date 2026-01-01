@@ -331,4 +331,98 @@ class FirebaseMessagingService {
       debugPrint('❌ Error creating test FCM notification: $e');
     }
   }
+
+  // firebase_messaging_service.dart - এই মেথডটি ক্লাসের শেষে যোগ করুন
+
+  Future<void> sendTargetedNotice({
+    required String title,
+    required String body,
+    required String targetType,
+    String? department,
+    String? semester,
+    Map<String, dynamic>? additionalData,
+  }) async {
+    try {
+      // Prepare FCM message payload
+      Map<String, dynamic> messageData = {
+        'title': title,
+        'body': body,
+        'type': 'notice',
+        'targetType': targetType,
+        'department': department ?? 'all',
+        'semester': semester ?? 'all',
+        'timestamp': DateTime.now().toIso8601String(),
+        'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+        'priority': 'high',
+      };
+
+      // Add additional data if provided
+      if (additionalData != null) {
+        messageData.addAll(additionalData);
+      }
+
+      // Determine FCM topic based on target
+      String topic = _getTargetTopic(targetType, department, semester);
+
+      // Send to FCM (This would typically be done from your backend)
+      // For now, we'll create a local notification
+      await _createTargetedNotification(title, body, messageData);
+
+      debugPrint('📢 Targeted notice prepared for topic: $topic');
+
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error sending targeted notice: $e');
+      debugPrint('Stack trace: $stackTrace');
+    }
+  }
+
+  String _getTargetTopic(String targetType, String? department, String? semester) {
+    switch (targetType) {
+      case 'all':
+        return 'all_users';
+      case 'department':
+        return 'dept_${department?.toLowerCase() ?? 'all'}';
+      case 'semester':
+        return 'sem_${semester?.toLowerCase() ?? 'all'}';
+      case 'specific':
+        return 'dept_${department?.toLowerCase()}_sem_${semester?.toLowerCase()}';
+      default:
+        return 'all_users';
+    }
+  }
+
+  Future<void> _createTargetedNotification(
+      String title,
+      String body,
+      Map<String, dynamic> data
+      ) async {
+    try {
+      int notificationId = DateTime.now().millisecondsSinceEpoch.remainder(100000);
+
+      Map<String, String> payload = {};
+      data.forEach((key, value) {
+        payload[key] = value.toString();
+      });
+
+      await AwesomeNotifications().createNotification(
+        content: NotificationContent(
+          id: notificationId,
+          channelKey: 'general_notifications',
+          title: title,
+          body: body,
+          payload: payload,
+          autoDismissible: false,
+          wakeUpScreen: true,
+          displayOnBackground: true,
+          displayOnForeground: true,
+          notificationLayout: NotificationLayout.BigText,
+          category: NotificationCategory.Message,
+        ),
+      );
+
+      debugPrint('✅ Targeted notification created locally');
+    } catch (e) {
+      debugPrint('❌ Error creating targeted notification: $e');
+    }
+  }
 }

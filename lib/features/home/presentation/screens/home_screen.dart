@@ -31,7 +31,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   Timer? _timer;
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
-  GlobalKey<RefreshIndicatorState>();
+      GlobalKey<RefreshIndicatorState>();
   bool _isOnline = true;
   StreamSubscription? _connectivitySubscription;
 
@@ -39,7 +39,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
 
-    // নেটওয়ার্ক কানেকশন মনিটরিং শুরু করুন
     _startConnectivityMonitoring();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -53,13 +52,15 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-
   Future<void> _startConnectivityMonitoring() async {
     try {
-      final List<ConnectivityResult> results = await Connectivity().checkConnectivity();
+      final List<ConnectivityResult> results =
+          await Connectivity().checkConnectivity();
       _isOnline = !results.contains(ConnectivityResult.none);
 
-      _connectivitySubscription = Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) {
+      _connectivitySubscription = Connectivity()
+          .onConnectivityChanged
+          .listen((List<ConnectivityResult> results) {
         final newOnlineStatus = !results.contains(ConnectivityResult.none);
 
         if (newOnlineStatus != _isOnline) {
@@ -72,7 +73,8 @@ class _HomeScreenState extends State<HomeScreen> {
             _refreshTimetableData();
           }
         }
-      });    } catch (e) {
+      });
+    } catch (e) {
       print('⚠️ Connectivity monitoring error: $e');
     }
   }
@@ -96,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
     } catch (e) {
-      print('⚠️ Error loading initial data: $e');
+      print(' Error loading initial data: $e');
     }
   }
 
@@ -126,7 +128,8 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!_isOnline) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('You are offline. Connect to internet to refresh.'),
+          content:
+              const Text('You are offline. Connect to internet to refresh.'),
           backgroundColor: Colors.orange,
           duration: const Duration(seconds: 2),
         ),
@@ -145,13 +148,9 @@ class _HomeScreenState extends State<HomeScreen> {
           auth.user!.department,
           auth.user!.semester,
         );
-
-
-
       }
     } catch (e) {
       print('⚠️ Error during refresh: $e');
-
     }
   }
 
@@ -171,21 +170,25 @@ class _HomeScreenState extends State<HomeScreen> {
         final user = userProvider.user;
 
         return Scaffold(
-          backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF0F4FF),
+          backgroundColor:
+              isDark ? const Color(0xFF0F172A) : const Color(0xFFF0F4FF),
           floatingActionButton: _isOnline
               ? GestureDetector(
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context)=> const AiScreen()));
-            },
-            child: SizedBox(
-              height: 100,
-              width: 100,
-              child: Lottie.asset(
-                'assets/lottie/robo.json',
-                fit: BoxFit.contain,
-              ),
-            ),
-          )
+                  onTap: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const AiScreen()));
+                  },
+                  child: SizedBox(
+                    height: 100,
+                    width: 100,
+                    child: Lottie.asset(
+                      'assets/lottie/robo.json',
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                )
               : null,
           body: RefreshIndicator(
             key: _refreshIndicatorKey,
@@ -208,7 +211,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.wifi_off, size: 16, color: Colors.white),
+                          const Icon(Icons.wifi_off,
+                              size: 16, color: Colors.white),
                           const SizedBox(width: 8),
                           Text(
                             'You are offline. Using cached data.',
@@ -227,7 +231,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 SliverToBoxAdapter(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF0F4FF),
+                      color: isDark
+                          ? const Color(0xFF0F172A)
+                          : const Color(0xFFF0F4FF),
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(32),
                         topRight: Radius.circular(32),
@@ -238,11 +244,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          _sectionHeader("Live Timetable", Icons.not_started_outlined),
+                          _sectionHeader(
+                              "Live Timetable", Icons.not_started_outlined),
                           const SizedBox(height: 16),
                           _buildLiveTimetable(timetableProvider, isDark),
                           const SizedBox(height: 32),
-                          _sectionHeader("Campus Services", Icons.auto_awesome_mosaic_rounded),
+                          _sectionHeader("Campus Services",
+                              Icons.auto_awesome_mosaic_rounded),
                           _quickActions(isDark),
                         ],
                       ),
@@ -272,7 +280,10 @@ class _HomeScreenState extends State<HomeScreen> {
         var top = constraints.biggest.height;
         return AnimatedOpacity(
           duration: const Duration(milliseconds: 250),
-          opacity: top <= (MediaQuery.of(context).padding.top + kToolbarHeight + 10) ? 1.0 : 0.0,
+          opacity:
+              top <= (MediaQuery.of(context).padding.top + kToolbarHeight + 10)
+                  ? 1.0
+                  : 0.0,
           child: Text(
             user?.name ?? "Student",
             style: const TextStyle(
@@ -294,9 +305,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     colors: isDark
                         ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
                         : [
-                      AppColors.themeColor,
-                      AppColors.themeColor.withOpacity(0.7)
-                    ],
+                            AppColors.themeColor,
+                            AppColors.themeColor.withOpacity(0.7)
+                          ],
                   ),
                 ),
               ),
@@ -324,7 +335,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: const EdgeInsets.all(3),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
+                        border: Border.all(
+                            color: Colors.white.withOpacity(0.4), width: 1.5),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.1),
@@ -337,26 +349,26 @@ class _HomeScreenState extends State<HomeScreen> {
                         radius: 38,
                         backgroundColor: Colors.white24,
                         child: ClipOval(
-                          child: user?.profileImageUrl != null && user!.profileImageUrl!.isNotEmpty
-                              ? CachedNetworkImage(
-                            imageUrl: user!.profileImageUrl!,
-                            width: 76,
-                            height: 76,
-                            fit: BoxFit.cover,
-
-                            placeholder: (context, url) => const CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-
-                            errorWidget: (context, url, error) => const Icon(
-                              Icons.person,
-                              size: 38,
-                              color: Colors.white,
-                            ),
-                          )
-                              : Image.asset(AssetsPath.placeholder)
-                        ),
+                            child: user?.profileImageUrl != null &&
+                                    user!.profileImageUrl!.isNotEmpty
+                                ? CachedNetworkImage(
+                                    imageUrl: user!.profileImageUrl!,
+                                    width: 76,
+                                    height: 76,
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) =>
+                                        const CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                    errorWidget: (context, url, error) =>
+                                        const Icon(
+                                      Icons.person,
+                                      size: 38,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : Image.asset(AssetsPath.placeholder)),
                       ),
                     ),
                     const SizedBox(width: 18),
@@ -371,8 +383,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 fontSize: 13,
                                 color: Colors.white.withOpacity(0.8),
                                 fontWeight: FontWeight.w500,
-                                letterSpacing: 0.8
-                            ),
+                                letterSpacing: 0.8),
                           ),
                           const SizedBox(height: 2),
                           Text(
@@ -387,16 +398,19 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 10),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.18),
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: Colors.white24, width: 0.5),
+                              border:
+                                  Border.all(color: Colors.white24, width: 0.5),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.school_outlined, size: 14, color: Colors.white),
+                                const Icon(Icons.school_outlined,
+                                    size: 14, color: Colors.white),
                                 const SizedBox(width: 6),
                                 Text(
                                   "${user?.department ?? 'N/A'} • ${user?.semester ?? 'N/A'}",
@@ -412,16 +426,19 @@ class _HomeScreenState extends State<HomeScreen> {
                           if (!_isOnline)
                             Container(
                               margin: const EdgeInsets.only(top: 8),
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 4),
                               decoration: BoxDecoration(
                                 color: Colors.orange.withOpacity(0.3),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.orange, width: 0.5),
+                                border: Border.all(
+                                    color: Colors.orange, width: 0.5),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.wifi_off, size: 12, color: Colors.white),
+                                  const Icon(Icons.wifi_off,
+                                      size: 12, color: Colors.white),
                                   const SizedBox(width: 6),
                                   Text(
                                     'Offline Mode',
@@ -458,19 +475,18 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (provider.isHoliday) {
-      return _statusCard("Holiday 🎉", "Take rest & recharge", Icons.celebration,
-          Colors.orange);
+      return _statusCard("Holiday 🎉", "Take rest & recharge",
+          Icons.celebration, Colors.orange);
     }
 
     if (provider.todayClasses.isEmpty) {
-      return _statusCard(
-          "No Classes", "Self-study is the best study",
-          Icons.auto_awesome,
-          Colors.blue);
+      return _statusCard("No Classes", "Self-study is the best study",
+          Icons.auto_awesome, Colors.blue);
     }
 
     return StreamBuilder<DateTime>(
-      stream: Stream.periodic(const Duration(seconds: 1), (_) => DateTime.now()),
+      stream:
+          Stream.periodic(const Duration(seconds: 1), (_) => DateTime.now()),
       builder: (context, snapshot) {
         return AnimationLimiter(
           child: ListView.separated(
@@ -486,8 +502,8 @@ class _HomeScreenState extends State<HomeScreen> {
               final accent = running
                   ? Colors.greenAccent.shade700
                   : finished
-                  ? Colors.grey
-                  : AppColors.themeColor;
+                      ? Colors.grey
+                      : AppColors.themeColor;
 
               return AnimationConfiguration.staggeredList(
                 position: index,
@@ -499,7 +515,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       duration: const Duration(milliseconds: 500),
                       curve: Curves.easeInOut,
                       decoration: BoxDecoration(
-                        color: isDark ? Colors.white.withOpacity(0.08) : Colors.white,
+                        color: isDark
+                            ? Colors.white.withOpacity(0.08)
+                            : Colors.white,
                         borderRadius: BorderRadius.circular(28),
                         boxShadow: [
                           BoxShadow(
@@ -519,14 +537,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                 children: [
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Row(
                                           children: [
                                             Text(
-                                              running ? "LIVE NOW" : finished
-                                                  ? "FINISHED"
-                                                  : "NEXT CLASS",
+                                              running
+                                                  ? "RUNNING NOW"
+                                                  : finished
+                                                      ? "FINISHED"
+                                                      : "NEXT CLASS",
                                               style: TextStyle(
                                                   fontSize: 11,
                                                   fontWeight: FontWeight.bold,
@@ -535,19 +556,27 @@ class _HomeScreenState extends State<HomeScreen> {
                                             // Offline indicator for each class card
                                             if (!_isOnline)
                                               Padding(
-                                                padding: const EdgeInsets.only(left: 8),
+                                                padding: const EdgeInsets.only(
+                                                    left: 8),
                                                 child: Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 6,
+                                                      vertical: 2),
                                                   decoration: BoxDecoration(
-                                                    color: Colors.orange.withOpacity(0.2),
-                                                    borderRadius: BorderRadius.circular(8),
+                                                    color: Colors.orange
+                                                        .withOpacity(0.2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            8),
                                                   ),
                                                   child: const Text(
                                                     'CACHED',
                                                     style: TextStyle(
                                                       fontSize: 8,
                                                       color: Colors.orange,
-                                                      fontWeight: FontWeight.bold,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                     ),
                                                   ),
                                                 ),
@@ -556,7 +585,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                         const SizedBox(height: 6),
                                         Text(
-                                          item.courseCode.isNotEmpty ? item.courseCode : "Subject",
+                                          item.courseCode.isNotEmpty
+                                              ? item.courseCode
+                                              : "Subject",
                                           style: TextStyle(
                                               fontSize: 18,
                                               fontWeight: FontWeight.bold,
@@ -567,7 +598,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                         const SizedBox(height: 6),
                                         Text(
                                           "Room ${item.room} • ${item.instructor.isNotEmpty ? item.instructor : 'N/A'}",
-                                          style: TextStyle(fontSize: 13,
+                                          style: TextStyle(
+                                              fontSize: 13,
                                               color: Colors.grey[500]),
                                         ),
                                       ],
@@ -583,12 +615,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                     child: Column(
                                       children: [
                                         Text("${item.startTime} -",
-                                            style: TextStyle(fontSize: 12,
+                                            style: TextStyle(
+                                                fontSize: 12,
                                                 color: isDark
                                                     ? Colors.white
                                                     : Colors.black87)),
                                         Text(item.endTime,
-                                            style: TextStyle(fontSize: 12,
+                                            style: TextStyle(
+                                                fontSize: 12,
                                                 fontWeight: FontWeight.bold,
                                                 color: accent)),
                                       ],
@@ -652,41 +686,39 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisSpacing: 12,
           childAspectRatio: 0.85,
           children: [
-            _action("Routine", Icons.calendar_month_rounded,
-                Colors.orangeAccent, () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const RoutineScreen()),
-                  );
-                }, isDark),
+            _action(
+                "Routine", Icons.calendar_month_rounded, Colors.orangeAccent,
+                () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const RoutineScreen()),
+              );
+            }, isDark),
             _action("Exams", Icons.menu_book_rounded, Colors.redAccent, () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                    builder: (context) => const ExamRoutine()),
+                MaterialPageRoute(builder: (context) => const ExamRoutine()),
+              );
+            }, isDark),
+            _action("Resource", Icons.local_library_rounded, Colors.blueAccent,
+                () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ResourceScreen()),
+              );
+            }, isDark),
+            _action("Notice", Icons.notifications_active_rounded, Colors.teal,
+                () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const NoticeScreen()),
               );
             }, isDark),
             _action(
-                "Resource", Icons.local_library_rounded, Colors.blueAccent, () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const ResourceScreen()),
-              );
+                "Game Zone", Icons.sports_esports_rounded, Colors.pinkAccent,
+                () {
+              _showComingSoon("Game Center");
             }, isDark),
-            _action(
-                "Notice", Icons.notifications_active_rounded, Colors.teal, () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const NoticeScreen()),
-              );
-            }, isDark),
-            _action("Game Zone", Icons.sports_esports_rounded,
-                Colors.pinkAccent, () {
-                  _showComingSoon("Game Center");
-                }, isDark),
           ],
         ),
       ],
@@ -703,7 +735,9 @@ class _HomeScreenState extends State<HomeScreen> {
           color: isDark ? const Color(0xFF1E293B) : Colors.white,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: isDark ? Colors.white.withOpacity(0.05) : color.withOpacity(0.1),
+            color: isDark
+                ? Colors.white.withOpacity(0.05)
+                : color.withOpacity(0.1),
             width: 1.5,
           ),
           boxShadow: [
@@ -779,14 +813,17 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: const EdgeInsets.all(30),
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [c.withOpacity(0.12), c.withOpacity(0.05)]),
+        gradient:
+            LinearGradient(colors: [c.withOpacity(0.12), c.withOpacity(0.05)]),
         borderRadius: BorderRadius.circular(30),
       ),
       child: Column(
         children: [
           Icon(i, size: 48, color: c),
           const SizedBox(height: 16),
-          Text(t, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(t,
+              style:
+                  const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 6),
           Text(s, textAlign: TextAlign.center),
         ],

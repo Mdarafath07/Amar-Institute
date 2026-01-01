@@ -1,3 +1,4 @@
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
@@ -13,6 +14,40 @@ class NoticeScreen extends StatefulWidget {
 }
 
 class _NoticeScreenState extends State<NoticeScreen> {
+  Future<void> sendNoticeNotification({
+    required String title,
+    required String body,
+    Map<String, String>? payload,
+  }) async {
+    try {
+      print(' Showing notice notification...');
+
+      int notificationId =
+          DateTime.now().millisecondsSinceEpoch.remainder(100000);
+
+      await AwesomeNotifications().createNotification(
+        content: NotificationContent(
+          id: notificationId,
+          channelKey: 'general_notifications',
+          title: title,
+          body: body,
+          notificationLayout: NotificationLayout.BigText,
+          payload: payload ?? {},
+          wakeUpScreen: true,
+          fullScreenIntent: true,
+          autoDismissible: false,
+          displayOnBackground: true,
+          displayOnForeground: true,
+          category: NotificationCategory.Message,
+        ),
+      );
+
+      print(' Notice notification shown');
+    } catch (e) {
+      print(' Error showing notice notification: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -32,7 +67,10 @@ class _NoticeScreenState extends State<NoticeScreen> {
                 letterSpacing: 1.0,
                 color: Colors.white,
                 shadows: [
-                  Shadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 2))
+                  Shadow(
+                      color: Colors.black12,
+                      blurRadius: 10,
+                      offset: Offset(0, 2))
                 ],
               ),
             ),
